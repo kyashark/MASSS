@@ -15,7 +15,8 @@ from app.core.model import User
 
 
 # 3. Import Module Models
-# As you build your modules,
-# from app.modules.auth.models import ...
-# from app.modules.scheduling.models import SchedTask, SchedSession, SchedQTable
-# from app.modules.wellness.models import ...
+
+
+#  Shakya - Sheduling Module
+# This tells SQLAlchemy: "Hey, there is a table called tasks"
+from app.modules.scheduling.models.task_db import TaskDB
