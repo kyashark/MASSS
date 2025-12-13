@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from sqlalchemy import text # Import text to write raw SQL
 from app.core.database import engine
 from app.core import base
+from fastapi.middleware.cors import CORSMiddleware
 
 
 from app.modules.scheduling.router import router as scheduling_router
@@ -10,6 +11,14 @@ from app.modules.scheduling.router import router as scheduling_router
 base.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="MASSS")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], # Verify your frontend port!
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 👇 REGISTER ONLY ONE ROUTER PER MODULE
 app.include_router(scheduling_router, prefix="/api/schedule",  # The Base URL for your whole module
