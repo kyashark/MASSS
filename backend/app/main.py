@@ -5,7 +5,7 @@ from app.core import base
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from app.modules.scheduling.router import router as scheduling_router
+# from app.modules.scheduling.router import router as scheduling_router
 # from app.modules.wellness.router import router as wellness_router (Teammate)
 
 base.Base.metadata.create_all(bind=engine)
@@ -21,9 +21,10 @@ app.add_middleware(
 )
 
 # 👇 REGISTER ONLY ONE ROUTER PER MODULE
-app.include_router(scheduling_router, prefix="/api/schedule",  # The Base URL for your whole module
+# app.include_router(scheduling_router, prefix="/api/schedule",  
+    # The Base URL for your whole module
     # tags are handled inside the master router now
-)
+# )
 
 @app.get("/")
 def home():
