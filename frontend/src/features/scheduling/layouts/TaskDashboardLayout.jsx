@@ -1,50 +1,58 @@
 import React, { useState } from "react";
+// Import your new page here!
+import ModulesPage from "../pages/ModulesPage.jsx";
+
 import {
   Home,
   CheckSquare,
   Calendar,
   User,
   Layout,
-  Search,
-  Bell,
   Settings,
-  Plus,
-  MoreHorizontal,
 } from "lucide-react";
 
 const TaskDashboardLayout = () => {
   // 1. State to track the active tab
-  const [activeTab, setActiveTab] = useState("tasks");
+  const [activeTab, setActiveTab] = useState("modules"); // Default to modules for testing
 
   // 2. Configuration for Tabs
   const menuItems = [
     { id: "home", label: "Home", icon: Home },
-    { id: "tasks", label: "Tasks", icon: CheckSquare },
+    { id: "modules", label: "Modules", icon: CheckSquare },
     { id: "scheduling", label: "Scheduling", icon: Calendar },
     { id: "profile", label: "Profile", icon: User },
   ];
 
-  // Helper to find currently active item data
   const currentTab = menuItems.find((item) => item.id === activeTab);
+
+  // 3. Helper to Render Content based on Tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case "home":
+        return <div className="p-8">Home Dashboard Component (Coming Soon)</div>;
+      case "modules":
+        return <ModulesPage />;
+      case "scheduling":
+        return <div className="p-8">Calendar Component (Coming Soon)</div>;
+      default:
+        return <div className="p-8">Page Not Found</div>;
+    }
+  };
 
   return (
     <div className="w-screen h-screen bg-white flex overflow-hidden font-sans">
       {/* --- LEFT SIDEBAR --- */}
       <aside className="w-[200px] flex-shrink-0 flex flex-col py-8 pl-6 border-r border-none bg-gray-100 z-20">
-        {/* --- BRAND HEADER --- */}
         <div className="flex items-center gap-3 px-4 mb-10 cursor-pointer group">
-          {/* Logo */}
           <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
             <Layout className="text-white" size={20} />
           </div>
         </div>
 
-        {/* --- NAVIGATION --- */}
         <div className="flex-1 space-y-2">
           {menuItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
-
             return (
               <button
                 key={item.id}
@@ -54,7 +62,7 @@ const TaskDashboardLayout = () => {
                 rounded-l-[30px] rounded-r-none font-medium transition-all duration-200 group
                 ${
                   isActive
-                    ? "bg-white text-gray-900"
+                    ? "bg-white text-gray-900 shadow-sm" // Added slight shadow for depth
                     : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
                 }
               `}
@@ -72,28 +80,16 @@ const TaskDashboardLayout = () => {
             );
           })}
         </div>
-
-        {/* Bottom Actions */}
-        <div className="mt-auto pt-8 border-t border-gray-100 px-4">
-          <button className="flex items-center gap-3 text-gray-400 hover:text-gray-900 transition">
-            <Settings size={20} />
-            <span className="font-medium text-sm">Settings</span>
-          </button>
-        </div>
       </aside>
 
       {/* --- MAIN CONTENT PAGE --- */}
       <main className="flex-1 flex flex-col bg-white transition-all duration-500 ease-in-out">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-12 bg-gray-150 px-8 py-4 shadow-sm">
-          <div className="h-10 flex items-center">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              {currentTab?.label}
-            </h1>
-          </div>
-        </header>
 
-        {/* Content Area */}
+
+        {/* Content Area - DYNAMIC CONTENT RENDERS HERE */}
+        <div className="flex-1 overflow-hidden relative">
+           {renderContent()}
+        </div>
       </main>
     </div>
   );
