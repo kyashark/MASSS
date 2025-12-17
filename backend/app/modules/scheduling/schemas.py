@@ -32,6 +32,8 @@ class TaskStatus(str, Enum):
     COMPLETED = "Completed"
     MISSED = "Missed"
 
+
+
 # --- MODULE SCHEMAS ---
 
 class ModuleBase(BaseModel):
@@ -47,10 +49,10 @@ class ModuleCreate(ModuleBase):
 
 class ModuleResponse(ModuleBase):
     id: int
+    # exams: List[ExamResponse] = [] # Uncomment if you want exams nested in module
     
     class Config:
         from_attributes = True # Allows Pydantic to read SQLAlchemy objects
-
 
 
 # --- TASK SCHEMAS ---
@@ -77,6 +79,14 @@ class TaskResponse(TaskBase):
         from_attributes = True
 
 
+class TaskUpdate(BaseModel):
+    # All fields optional because user might only change one thing
+    name: Optional[str] = None
+    estimated_pomodoros: Optional[int] = None
+    deadline: Optional[datetime] = None
+    status: Optional[TaskStatus] = None
+
+
 
 # --- SESSION SCHEMAS (For the Timer) ---
 
@@ -86,6 +96,7 @@ class SessionCreate(BaseModel):
     end_time: datetime
     completed: bool
     focus_rating: Optional[int] = None # 1-5
+
 
 
 # --- PROFILE SCHEMAS ---
@@ -113,6 +124,23 @@ class StudentProfileCreate(StudentProfileBase):
 class StudentProfileResponse(StudentProfileBase):
     id: int
     fixed_events: List[FixedEventBase] = [] # Nested list of events
+
+
+
+
+
+# --- EXAM SCHEMAS (New) ---
+class ExamBase(BaseModel):
+    name: str
+    module_id: int
+    date: datetime
+    importance: int = 3 # 1-5
+
+class ExamCreate(ExamBase):
+    pass
+
+class ExamResponse(ExamBase):
+    id: int
 
     class Config:
         from_attributes = True
