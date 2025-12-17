@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Enum, Time
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
 from app.core.base import Base
 
-# --- Enums remain the same ---
+# --- ENUMS ---
 class EnergyTime(str, enum.Enum):
     MORNING = "Morning"
     AFTERNOON = "Afternoon"
@@ -20,6 +20,15 @@ class TaskStatus(str, enum.Enum):
     PENDING = "Pending"
     COMPLETED = "Completed"
     MISSED = "Missed"
+
+class DayOfWeek(str, enum.Enum):
+    MONDAY = "Monday"
+    TUESDAY = "Tuesday"
+    WEDNESDAY = "Wednesday"
+    THURSDAY = "Thursday"
+    FRIDAY = "Friday"
+    SATURDAY = "Saturday"
+    SUNDAY = "Sunday"
 
 # --- Database Tables ---
 
@@ -77,3 +86,37 @@ class PomodoroSession(Base):
     completed = Column(Boolean, default=False)
 
     task = relationship("Task", back_populates="sessions")
+
+class StudentProfile(Base):
+    __tablename__ = "student_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, default="Student")
+    
+    # 1. Sleep Schedule (Hard Limits)
+    wake_up_time = Column(Time, nullable=False) # e.g., 07:00:00
+    bed_time = Column(Time, nullable=False)     # e.g., 23:00:00
+    
+    # 2. Preferred Capacity (Max Pomodoros they WANT to do)
+    morning_capacity = Column(Integer, default=4)
+    afternoon_capacity = Column(Integer, default=4)
+    night_capacity = Column(Integer, default=4)
+
+    fixed_events = relationship("FixedEvent", back_populates="profile", cascade="all, delete-orphan")
+
+class FixedEvent(Base):
+    __tablename__ = "fixed_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    profile_id = Column(Integer, ForeignKey("student_profiles.id"))
+    
+    name = Column(String, nullable=False) # "Uni Lecture", "Gym"
+    day_of_week = Column(Enum(DayOfWeek), nullable=False)
+    
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+    
+    # Which bucket does this reduce?
+    slot_category = Column(Enum(EnergyTime), nullable=False)
+
+    profile = relationship("StudentProfile", back_populates="fixed_events")
