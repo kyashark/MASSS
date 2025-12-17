@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from datetime import datetime
+from pydantic import BaseModel, Field
+from datetime import datetime, time
 from typing import List, Optional
 from enum import Enum
 
@@ -11,6 +11,15 @@ class EnergyTime(str, Enum):
     MORNING = "Morning"
     AFTERNOON = "Afternoon"
     NIGHT = "Night"
+
+class DayOfWeek(str, Enum):
+    MONDAY = "Monday"
+    TUESDAY = "Tuesday"
+    WEDNESDAY = "Wednesday"
+    THURSDAY = "Thursday"
+    FRIDAY = "Friday"
+    SATURDAY = "Saturday"
+    SUNDAY = "Sunday"
 
 class ModuleType(str, Enum):
     CODING = "Coding"
@@ -42,6 +51,8 @@ class ModuleResponse(ModuleBase):
     class Config:
         from_attributes = True # Allows Pydantic to read SQLAlchemy objects
 
+
+
 # --- TASK SCHEMAS ---
 
 class TaskBase(BaseModel):
@@ -65,6 +76,8 @@ class TaskResponse(TaskBase):
     class Config:
         from_attributes = True
 
+
+
 # --- SESSION SCHEMAS (For the Timer) ---
 
 class SessionCreate(BaseModel):
@@ -73,3 +86,33 @@ class SessionCreate(BaseModel):
     end_time: datetime
     completed: bool
     focus_rating: Optional[int] = None # 1-5
+
+
+# --- PROFILE SCHEMAS ---
+class FixedEventBase(BaseModel):
+    name: str
+    day_of_week: DayOfWeek
+    start_time: time # Format "HH:MM:SS"
+    end_time: time
+    slot_category: EnergyTime
+
+class FixedEventCreate(FixedEventBase):
+    pass
+
+class StudentProfileBase(BaseModel):
+    name: str
+    wake_up_time: time
+    bed_time: time
+    morning_capacity: int = 4
+    afternoon_capacity: int = 4
+    night_capacity: int = 4
+
+class StudentProfileCreate(StudentProfileBase):
+    pass
+
+class StudentProfileResponse(StudentProfileBase):
+    id: int
+    fixed_events: List[FixedEventBase] = [] # Nested list of events
+
+    class Config:
+        from_attributes = True
