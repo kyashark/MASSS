@@ -10,10 +10,15 @@ from app.core.database import SessionLocal
 from app.modules.scheduling.services.heuristic import generate_heuristic_schedule
 
 # Import Schemas (Added TaskCreate)
-from app.modules.scheduling.schemas import TaskResponse, TaskCreate 
+from app.modules.scheduling.schemas import TaskResponse, TaskCreate
+from app.modules.scheduling.schemas import ModuleCreate, ModuleResponse 
+from app.modules.scheduling.schemas import ExamCreate, ExamResponse
 
 # Import Models (Added Module, TaskStatus)
 from app.modules.scheduling.models import Task, Module, TaskStatus
+from app.modules.scheduling.models import Exam
+
+
 router = APIRouter()
 
 # Dependency to get DB
@@ -76,3 +81,67 @@ def get_pending_tasks(db: Session = Depends(get_db)):
     Useful for the main 'Backlog' view.
     """
     return db.query(Task).filter(Task.status == TaskStatus.PENDING).all()
+
+
+# --- MODULE ROUTES ---
+
+@router.get("/modules", response_model=List[ModuleResponse])
+def get_modules(db: Session = Depends(get_db)):
+    """Fetch all modules (e.g., for the Sidebar or Dropdowns)."""
+    return db.query(Module).all()
+
+@router.post("/modules", response_model=ModuleResponse)
+def create_module(module_in: ModuleCreate, db: Session = Depends(get_db)):
+    """Add a new Subject (e.g., 'Linear Algebra')."""
+    new_module = Module(
+        name=module_in.name,
+        category=module_in.category,
+        difficulty=module_in.difficulty,
+        preferred_energy=module_in.preferred_energy
+    )
+    db.add(new_module)
+    db.commit()
+    db.refresh(new_module)
+    return new_module
+
+@router.delete("/modules/{module_id}")
+def delete_module(module_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a subject. 
+    WARNING: This will cascade delete all Tasks and Exams for this module!
+    """
+    module = db.query(Module).filter(Module.id == module_id).first()
+    if not module:
+        raise HTTPException(status_code=404, detail="Module not found")
+    
+    db.delete(module)
+    db.commit()
+    return {"message": "Module and related data deleted successfully"}
+
+
+
+
+# --- EXAM ROUTES ---
+
+@router.post("/exams", response_model=ExamResponse)
+def create_exam(exam_in: ExamCreate, db: Session = Depends(get_db)):
+    """Add an Exam (The 'Stick' that forces RL to prioritize)."""
+    # Verify module exists
+    if not db.query(Module).filter(Module.id == exam_in.module_id).first():
+        raise HTTPException(status_code=404, detail="Module not found")
+
+    new_exam = Exam(
+        name=exam_in.name,
+        module_id=exam_in.module_id,
+        date=exam_in.date,
+        importance=exam_in.importance
+    )
+    db.add(new_exam)
+    db.commit()
+    db.refresh(new_exam)
+    return new_exam
+
+@router.get("/modules/{module_id}/exams", response_model=List[ExamResponse])
+def get_exams_for_module(module_id: int, db: Session = Depends(get_db)):
+    """Show upcoming exams for a specific subject."""
+    return db.query(Exam).filter(Exam.module_id == module_id).all()
