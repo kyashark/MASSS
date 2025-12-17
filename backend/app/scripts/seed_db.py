@@ -10,7 +10,8 @@ sys.path.append(os.getcwd())
 from app.core.database import SessionLocal, engine, Base
 from app.modules.scheduling.models import (
     Module, Task, PomodoroSession, Exam, 
-    ModuleType, EnergyTime, TaskStatus
+    ModuleType, EnergyTime, TaskStatus,
+    StudentProfile, FixedEvent, DayOfWeek
 )
 
 def seed_data():
@@ -23,6 +24,35 @@ def seed_data():
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
+
+    # 5. Create Student Profile
+    print("👤 Creating Student Profile...")
+    profile = StudentProfile(
+        name="John Doe",
+        wake_up_time=datetime.strptime("07:00", "%H:%M").time(),
+        bed_time=datetime.strptime("23:00", "%H:%M").time(),
+        morning_capacity=4,    # Wants to work in morning
+        afternoon_capacity=4,
+        night_capacity=6       # Night owl
+    )
+    db.add(profile)
+    db.commit()
+
+    # 6. Add Fixed Event (University Class)
+    # On Wednesdays, Morning is BUSY.
+    print("🏫 Adding University Timetable...")
+    uni_class = FixedEvent(
+        profile_id=profile.id,
+        name="Data Structures Lecture",
+        day_of_week=DayOfWeek.WEDNESDAY,
+        start_time=datetime.strptime("09:00", "%H:%M").time(),
+        end_time=datetime.strptime("11:00", "%H:%M").time(),
+        slot_category=EnergyTime.MORNING 
+    )
+    db.add(uni_class)
+    db.commit()
+    
+    print("✅ Seed Complete! Profile and Timetable ready.")
 
     # 2. CREATE MODULES
     print("📚 Creating Modules...")

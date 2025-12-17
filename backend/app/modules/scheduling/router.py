@@ -14,11 +14,12 @@ from app.modules.scheduling.schemas import TaskResponse, TaskCreate
 from app.modules.scheduling.schemas import ModuleCreate, ModuleResponse 
 from app.modules.scheduling.schemas import ExamCreate, ExamResponse
 from app.modules.scheduling.schemas import TaskUpdate
+from app.modules.scheduling.schemas import StudentProfileCreate, StudentProfileResponse, FixedEventCreate
 
 # Import Models (Added Module, TaskStatus)
 from app.modules.scheduling.models import Task, Module, TaskStatus
 from app.modules.scheduling.models import Exam
-
+from app.modules.scheduling.models import StudentProfile, FixedEvent
 
 
 router = APIRouter()
@@ -113,6 +114,8 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Task deleted"}
 
+
+
 # --- MODULE ROUTES ---
 
 @router.get("/modules", response_model=List[ModuleResponse])
@@ -177,3 +180,51 @@ def get_exams_for_module(module_id: int, db: Session = Depends(get_db)):
     return db.query(Exam).filter(Exam.module_id == module_id).all()
 
 
+# --- PROFILE ROUTES ---
+
+@router.post("/profile", response_model=StudentProfileResponse)
+def create_or_update_profile(profile_in: StudentProfileCreate, db: Session = Depends(get_db)):
+    """Create or Update the one single user profile."""
+    # Check if exists
+    profile = db.query(StudentProfile).first()
+    if not profile:
+        profile = StudentProfile()
+        db.add(profile)
+    
+    # Update fields
+    profile.name = profile_in.name
+    profile.wake_up_time = profile_in.wake_up_time
+    profile.bed_time = profile_in.bed_time
+    profile.morning_capacity = profile_in.morning_capacity
+    profile.afternoon_capacity = profile_in.afternoon_capacity
+    profile.night_capacity = profile_in.night_capacity
+    
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+@router.get("/profile", response_model=StudentProfileResponse)
+def get_profile(db: Session = Depends(get_db)):
+    profile = db.query(StudentProfile).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not set up yet")
+    return profile
+
+@router.post("/profile/events")
+def add_fixed_event(event_in: FixedEventCreate, db: Session = Depends(get_db)):
+    """Add a Gym class or Lecture."""
+    profile = db.query(StudentProfile).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Create profile first")
+        
+    new_event = FixedEvent(
+        profile_id=profile.id,
+        name=event_in.name,
+        day_of_week=event_in.day_of_week,
+        start_time=event_in.start_time,
+        end_time=event_in.end_time,
+        slot_category=event_in.slot_category
+    )
+    db.add(new_event)
+    db.commit()
+    return {"status": "Event added"}
