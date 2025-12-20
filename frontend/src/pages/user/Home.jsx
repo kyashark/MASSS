@@ -1,4 +1,3 @@
-// Home.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -18,7 +17,10 @@ import {
   PauseCircle,
   GraduationCap,
   Bot,
+  BookOpenText,
 } from "lucide-react";
+
+import ModuleCard from "../../components/ModuleBentoCard.jsx";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -62,14 +64,20 @@ const Home = () => {
       </div>
 
       {/*  BLOCK 3: MODULES LIST */}
-      <div
-        onClick={() => navigate("/user/modules")}
-        className="col-span-1 row-span-2 bg-white  text-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col relative overflow-hidden cursor-pointer hover:shadow-md transition-all"
-      >
+      <div className="col-span-1 row-span-2 bg-white  text-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col relative cursor-pointer hover:shadow-md transition-all">
         <ArrowUpRight
           className="absolute top-6 right-6 text-slate-900"
+          onClick={() => navigate("/user/modules")}
           size={30}
         />
+
+        <div className="flex-1 w-full">
+          <div className="flex items-center gap-3 mb-6">
+            <BookOpenText size={24} className="text-gray-700" />
+            <h2 className="text-xl font-semibold text-gray-900">Modules</h2>
+          </div>
+          <ModuleCard />
+        </div>
       </div>
 
       {/*  BLOCK 4: AGENT ALERT --- */}
