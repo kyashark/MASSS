@@ -1,14 +1,54 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import './index.css';
+
+import UserDashboard from './pages/user/UserDashboard.jsx'; // Example
 import ItemDashboard from './pages/ItemDashboard.jsx';
 import TaskDashboardLayouts from './features/scheduling/layouts/TaskDashboardLayout.jsx';
-import './index.css'
+
+// Layouts
+import UserDashboardLayout from './layouts/UserDashboardLayout.jsx';
+
+// Pages
+import Home from './pages/user/Home.jsx';
+import Modules from './pages/user/Modules.jsx';
+import Scheduling from './pages/user/Scheduling.jsx';
+import StudyProfile from './pages/user/StudyProfile.jsx';
+
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-         <Route path="/test-crud" element={<ItemDashboard />} />
-         <Route path="/masss" element={<TaskDashboardLayouts/>} />
+
+        {/* Public Routes */}
+        <Route path="/test-crud" element={<ItemDashboard />} />
+        <Route path="/masss" element={<TaskDashboardLayouts/>} />
+        <Route path="/masss/user/dashboard" element={<UserDashboard/>} />
+
+        {/* Redirect Root */}
+        <Route path="/" element={<Navigate to="/user/home" replace />} />
+
+        {/* --- NESTED ROUTES --- */}
+
+        {/* 1. Parent Route: Sets the path prefix "/user" and the Layout */}
+        <Route path="/user" element={<UserDashboardLayout />}>
+          
+          {/* 2. Index Route: Redirects /user to /user/home */}
+          <Route index element={<Navigate to="home" replace />} />
+
+          {/* 3. Child Routes: These render INSIDE the <Outlet /> of the Layout */}
+          {/* Path becomes: /user/home */}
+          <Route path="home" element={<Home />} />
+          <Route path="Modules" element={<Modules />} />
+          <Route path="scheduling" element={<Scheduling />} />
+          <Route path="study-profile" element={<StudyProfile />} />  
+          
+          {/* You can easily add more here later: */}
+          {/* <Route path="profile" element={<UserProfile />} /> */}
+          {/* <Route path="settings" element={<UserSettings />} /> */}
+
+        </Route>
+        
       </Routes>
     </BrowserRouter>
   );
