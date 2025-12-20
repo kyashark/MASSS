@@ -1,83 +1,63 @@
 import React from "react";
 import { 
   MoreHorizontal, 
-  Terminal, 
-  Calculator, 
-  BookOpen, 
-  Palette, 
-  Brain, 
-  Layout 
 } from "lucide-react";
 
-// 1. Icon Mapping Logic (Connects DB "type" to UI Icon)
-const ICON_MAP = {
-  coding: Terminal,
-  math: Calculator,
-  language: BookOpen,
-  creative: Palette,
-  memorization: Brain,
-  default: Layout
-};
+
 
 const ModuleCard = ({ module, onClick, onEdit }) => {
-  // Select the correct icon, fallback to default if missing
-  const IconComponent = ICON_MAP[module.type] || ICON_MAP.default;
+
+  const lightColorClass = module.color ? `${module.color} opacity-20` : 'bg-gray-100';
+  const solidColorClass = module.color || 'bg-gray-900';
 
   return (
     <div 
       onClick={onClick}
-      className="group relative bg-white border border-gray-100 rounded-3xl p-6 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] overflow-hidden"
+      className="group bg-white border border-gray-100 rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
     >
-      {/* --- A. Left Color Stripe --- */}
-      <div className={`absolute left-0 top-0 bottom-0 w-2 ${module.color} transition-all duration-300 group-hover:w-3`} />
-
-      {/* --- B. Header (Icon & Menu) --- */}
-      <div className="flex justify-between items-start mb-5 pl-2">
-        {/* Icon Box */}
-        <div className={`w-12 h-12 rounded-2xl ${module.color.replace('bg-', 'bg-opacity-10 bg-')} flex items-center justify-center transition-transform group-hover:rotate-6`}>
-           <IconComponent 
-              size={24} 
-              className={`text-${module.color.replace('bg-', '')}-600`} // Tries to match text color to bg color
-              style={{ color: 'inherit' }} // Fallback if tailwind class fails
-           />
+      {/* --- A. Header (Icon & Action) --- */}
+      <div className="flex justify-between items-start mb-4">
+        {/* Minimalist Aesthetic Icon Box */}
+<div className={`w-8 h-8 rounded-lg ${lightColorClass} transition-transform duration-300 group-hover:scale-110`} >     
         </div>
 
-        {/* Menu Button (Stop Propagation to prevent opening card) */}
+        {/* Subtle Menu Button */}
         <button 
           onClick={(e) => {
             e.stopPropagation();
             onEdit && onEdit(module);
           }}
-          className="text-gray-300 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+          className="text-gray-300 hover:text-gray-900 transition-colors p-1"
         >
-          <MoreHorizontal size={20} />
+          <MoreHorizontal size={18} />
         </button>
       </div>
 
-      {/* --- C. Content --- */}
-      <div className="pl-2 mb-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-1 leading-tight">{module.name}</h3>
-        <p className="text-sm font-medium text-gray-500">
+      {/* --- B. Content --- */}
+      <div className="mb-6">
+        <h3 className="text-base font-semibold text-gray-900 mb-1 leading-tight">
+          {module.name}
+        </h3>
+        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
            {module.tasks || 0} active tasks
         </p>
       </div>
 
-      {/* --- D. Progress Footer --- */}
-      <div className="pl-2">
-        <div className="flex justify-between text-xs font-bold mb-2 text-gray-400 group-hover:text-gray-600 transition-colors">
-          <span>Progress</span>
-          <span>{module.progress || 0}%</span>
+      {/* --- C. Progress Footer (Light & Modern) --- */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+          <span>Completion</span>
+          <span className="text-gray-900">{module.progress || 0}%</span>
         </div>
         
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+        {/* Ultra-thin Progress Bar */}
+        <div className="w-full bg-gray-100 h-1 rounded-full overflow-hidden">
           <div 
-            className={`h-full ${module.color} transition-all duration-1000 ease-out`} 
+            className="h-full bg-gray-900 transition-all duration-700 ease-in-out" 
             style={{ width: `${module.progress || 0}%` }} 
           />
         </div>
       </div>
-
     </div>
   );
 };

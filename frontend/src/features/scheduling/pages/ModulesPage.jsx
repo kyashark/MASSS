@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import ModuleForm from "../components/ModuleForm.jsx";
 import ModuleDetailPage from "./ModuleDetailPage.jsx";
 import ModuleCard from "../components/ModuleCard.jsx";
+import PageHeader from "../components/PageHeader.jsx";
 
 // Mock Data (Updated with 'type' so icons appear correctly)
 const MOCK_MODULES = [
@@ -80,33 +81,25 @@ const ModulesPage = ({ setIsDetailView }) => {
     <div className="p-8 h-full overflow-y-auto bg-white animate-in fade-in duration-300">
       
       {/* Page Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">Current Subjects</h2>
-          <p className="text-gray-500 text-sm">Manage your active learning paths</p>
-        </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-xl font-medium transition-transform duration-200 shadow-lg hover:scale-105"
-        >
-          <Plus size={18} />
-          <span>New Module</span>
-        </button>
-      </div>
+
+<PageHeader 
+  title="Modules" 
+  description="Manage your active learning paths"
+>
+  <button 
+    onClick={() => setIsModalOpen(true)}
+    className="flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-xl font-medium transition-transform duration-200 shadow-lg hover:scale-105"
+  >
+    <Plus size={18} />
+    <span>New Module</span>
+  </button>
+</PageHeader>
+
 
       {/* Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
-        {/* 'Add New' Empty State Card */}
-        <div 
-            onClick={() => setIsModalOpen(true)}
-            className="border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center p-6 text-gray-400 hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02] cursor-pointer group h-64"
-        >
-          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-            <Plus size={28} />
-          </div>
-          <span className="font-bold text-lg">Create Module</span>
-        </div>
+
 
         {/* Real Module Cards */}
         {MOCK_MODULES.map((module) => (
