@@ -8,7 +8,8 @@ from app.core import base
 
 # 2. Import Your Module Routers
 from app.modules.scheduling.router import router as scheduling_router
-# from app.modules.wellness.router import router as wellness_router (Teammate placeholder)
+from app.modules.test_crud.router import router as test_crud_router
+
 
 # Ensure tables exist (Good for development, safer to leave it)
 base.Base.metadata.create_all(bind=engine)
@@ -31,6 +32,13 @@ app.include_router(
     prefix="/api/scheduling", 
     tags=["Scheduling"]
 )
+
+# --- Basic Health Check Endpoint ---
+app.include_router(
+    test_crud_router, 
+    prefix="/api/test-crud", 
+    tags=["Test CRUD"])
+
 
 @app.get("/")
 def home():

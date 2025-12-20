@@ -1,29 +1,29 @@
 import { useState, useEffect } from "react";
 
-export default function TaskForm({ onAdd, onUpdate, taskToEdit, onCancel }) {
+export default function ItemForm({ onAdd, onUpdate, itemToEdit, onCancel }) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("General");
 
   // Populate form when Edit button is clicked
   useEffect(() => {
-    if (taskToEdit) {
-      setTitle(taskToEdit.title);
-      setCategory(taskToEdit.category);
+    if (itemToEdit) {
+      setTitle(itemToEdit.title);
+      setCategory(itemToEdit.category);
     } else {
       setTitle("");
       setCategory("General");
     }
-  }, [taskToEdit]);
+  }, [itemToEdit]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    if (taskToEdit) {
+    if (itemToEdit) {
       // Send the updated object back to parent
-      onUpdate({ ...taskToEdit, title, category });
+      onUpdate({ ...itemToEdit, title, category });
     } else {
-      // Add new task
+      // Add new item
       onAdd(title, category);
       setTitle("");
       setCategory("General");
@@ -36,13 +36,13 @@ export default function TaskForm({ onAdd, onUpdate, taskToEdit, onCancel }) {
       className="w-full max-w-md rounded-xl bg-white p-4 shadow-sm border border-gray-200"
     >
       <h3 className="mb-3 text-sm font-semibold text-gray-800">
-        {taskToEdit ? "Edit Task" : "New Task"}
+        {itemToEdit ? "Edit Item" : "New Item"}
       </h3>
 
       <div className="flex gap-2 mb-3">
         <input
           type="text"
-          placeholder="Task title"
+          placeholder="Item title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -63,15 +63,15 @@ export default function TaskForm({ onAdd, onUpdate, taskToEdit, onCancel }) {
         <button
           type="submit"
           className={`w-full rounded-lg py-2 text-sm font-medium text-white transition-colors ${
-            taskToEdit
+            itemToEdit
               ? "bg-green-600 hover:bg-green-700"
               : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
-          {taskToEdit ? "Save Changes" : "Add Task"}
+          {itemToEdit ? "Save Changes" : "Add Item"}
         </button>
 
-        {taskToEdit && (
+        {itemToEdit && (
           <button
             type="button"
             onClick={onCancel}
