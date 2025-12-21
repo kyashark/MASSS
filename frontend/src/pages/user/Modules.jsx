@@ -1,67 +1,75 @@
 // src/pages/Modules.jsx
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { Plus, ArrowLeft,Book } from "lucide-react";
 import ModuleForm from "../../components/ModuleForm.jsx";
 import ModuleDetailPage from "../../components/ModuleDetailPage.jsx";
 import ModuleCard from "../../components/ModuleCard.jsx";
 
+// API
+import { createModule, createExam, fetchModules } from "../../api/modules";
+
 // Mock Data
-const MOCK_MODULES = [
-  {
-    id: 1,
-    name: "Learn Python",
-    tasks: 12,
-    progress: 45,
-    color: "bg-blue-500",
-    type: "coding",
-    difficulty: 3,
-    priority: "Medium",
-  },
-  {
-    id: 2,
-    name: "Data Structures",
-    tasks: 8,
-    progress: 20,
-    color: "bg-purple-500",
-    type: "math",
-    difficulty: 5,
-    priority: "High",
-  },
-  {
-    id: 3,
-    name: "Algorithms",
-    tasks: 15,
-    progress: 60,
-    color: "bg-green-500",
-    type: "coding",
-    difficulty: 4,
-    priority: "High",
-  },
-  {
-    id: 4,
-    name: "Databases",
-    tasks: 10,
-    progress: 30,
-    color: "bg-red-500",
-    type: "backend",
-    difficulty: 3,
-    priority: "Medium",
-  },
-  {
-    id: 5,
-    name: "Operating Systems",
-    tasks: 9,
-    progress: 15,
-    color: "bg-yellow-500",
-    type: "theory",
-    difficulty: 5,
-    priority: "High",
-  },
-];
+// const MOCK_MODULES = [
+//   {
+//     id: 1,
+//     name: "Learn Python",
+//     tasks: 12,
+//     progress: 45,
+//     color: "bg-blue-500",
+//     type: "coding",
+//     difficulty: 3,
+//     priority: "Medium",
+//   },
+//   {
+//     id: 2,
+//     name: "Data Structures",
+//     tasks: 8,
+//     progress: 20,
+//     color: "bg-purple-500",
+//     type: "math",
+//     difficulty: 5,
+//     priority: "High",
+//   },
+//   {
+//     id: 3,
+//     name: "Algorithms",
+//     tasks: 15,
+//     progress: 60,
+//     color: "bg-green-500",
+//     type: "coding",
+//     difficulty: 4,
+//     priority: "High",
+//   },
+//   {
+//     id: 4,
+//     name: "Databases",
+//     tasks: 10,
+//     progress: 30,
+//     color: "bg-red-500",
+//     type: "backend",
+//     difficulty: 3,
+//     priority: "Medium",
+//   },
+//   {
+//     id: 5,
+//     name: "Operating Systems",
+//     tasks: 9,
+//     progress: 15,
+//     color: "bg-yellow-500",
+//     type: "theory",
+//     difficulty: 5,
+//     priority: "High",
+//   },
+// ];
 
 const Modules = () => {
+  const [modules, setModules] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState(null);
+
+  useEffect(() => {
+  fetchModules().then(setModules);
+}, []);
 
   const handleOpenModule = (module) => {
     setSelectedModule(module);
@@ -71,10 +79,37 @@ const Modules = () => {
     setSelectedModule(null);
   };
 
-  const handleCreateModule = (newModule) => {
-    console.log("Creating new module:", newModule);
+const handleCreateModule = async (newModule) => {
+  try {
+    // 1. Create module
+    const createdModule = await createModule({
+      name: newModule.name,
+      category: newModule.category.toUpperCase(),
+      color: newModule.color,
+      priority: newModule.priority.toUpperCase(),
+      difficulty: newModule.difficulty,
+      energy_time: newModule.energyTime,
+    });
+
+    // 2. Create exams (if any)
+    for (const exam of newModule.exams) {
+      await createExam({
+        module_id: createdModule.id,
+        name: exam.name,
+        type: exam.type,
+        due_date: exam.dueDate,
+      });
+    }
+
+    // 3. Update UI immediately
+    setModules((prev) => [createdModule, ...prev]);
+
     setIsModalOpen(false);
-  };
+  } catch (err) {
+    console.error("Failed to create module", err);
+  }
+};
+
 
   return (
     <>
@@ -129,14 +164,14 @@ const Modules = () => {
             </div>
 
             {/* SCROLLABLE MODULE GRID — ONLY THIS SCROLLS */}
-            {MOCK_MODULES.length === 0 ? (
+            {modules.length === 0 ? (
               <div className="flex-1 flex items-center justify-center text-gray-500">
                 No modules yet. Create one to get started!
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto p-1 scrollbar-hide">
                 <div className="grid grid-cols-1 gap-6">
-                  {MOCK_MODULES.map((module) => (
+                  {modules.map((module) => (
                     <div
                       key={module.id}
                       onClick={() => handleOpenModule(module)}
