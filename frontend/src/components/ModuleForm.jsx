@@ -164,7 +164,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                       value={moduleName}
                       onChange={(e) => setModuleName(e.target.value)}
                       placeholder="e.g., Advanced React"
-                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                     />
                   </div>
 
@@ -175,7 +175,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                     >
                       <option value="">Select category</option>
                       {categories.map((cat) => (
@@ -216,7 +216,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                     <select
                       value={priority}
                       onChange={(e) => setPriority(e.target.value)}
-                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                     >
                       {priorities.map((p) => (
                         <option key={p} value={p}>
@@ -260,7 +260,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                     <select
                       value={energyTime}
                       onChange={(e) => setEnergyTime(e.target.value)}
-                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                     >
                       {energyTimes.map((time) => (
                         <option key={time} value={time}>
@@ -320,8 +320,8 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                 {/* Exam List */}
                 <div className="space-y-4  min-h-[200px] mt-4 mb-4">
                   {exams.length === 0 ? (
-                    <div className="text-center text-gray-400 mt-10 mb-10 bg-blue-500">
-                      <p className="text-lg">
+                    <div className="text-center text-gray-400 pt-10">
+                      <p className="text-md">
                         No exams or assignments added yet
                       </p>
                       <p className="text-sm mt-2">
