@@ -1,235 +1,395 @@
-// components/ModuleForm.jsx
 import React, { useState } from "react";
-import { X, Sun, Moon, Sunrise, Clock, Calendar, Hash } from "lucide-react";
 
-const COLORS = [
-  { id: "blue", bg: "bg-blue-500" },
-  { id: "purple", bg: "bg-purple-500" },
-  { id: "green", bg: "bg-green-500" },
-  { id: "orange", bg: "bg-orange-500" },
-  { id: "red", bg: "bg-red-500" },
-  { id: "pink", bg: "bg-pink-500" },
-  { id: "teal", bg: "bg-teal-500" },
-  { id: "yellow", bg: "bg-yellow-500" },
-  { id: "gray", bg: "bg-gray-500" },
+import { X, SendHorizontal } from "lucide-react";
+
+const pastelColors = [
+  { name: "Dusty Pink", value: "#E89BAE" },
+  { name: "Steel Blue", value: "#7AAFE0" },
+  { name: "Teal Mint", value: "#82CBB2" },
+  { name: "Deep Lavender", value: "#B888E2" },
+  { name: "Warm Peach", value: "#FFB07C" },
+  { name: "Golden Yellow", value: "#FFE680" },
+  { name: "Sage Green", value: "#A3C48A" },
+  { name: "Coral Rose", value: "#FF9E85" },
 ];
 
-const MODULE_TYPES = [
-  { id: "coding", label: "Coding" },
-  { id: "math", label: "Math / Logic" },
-  { id: "language", label: "Language / Reading" },
-  { id: "creative", label: "Creative / Design" },
-  { id: "memorization", label: "Memorization" },
+const categories = [
+  "Coding",
+  "Math/Logic",
+  "Language",
+  "Creative Design",
+  "Memorization",
 ];
+const priorities = ["Low", "Medium", "High"];
+const energyTimes = ["Morning", "Afternoon", "Evening"];
 
 const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
-  const [name, setName] = useState("");
-  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
-  const [moduleType, setModuleType] = useState("coding");
+  const [step, setStep] = useState(1); // 1 = basics, 2 = exams
+
+  // Page 1 states
+  const [moduleName, setModuleName] = useState("");
+  const [category, setCategory] = useState("");
+  const [color, setColor] = useState(pastelColors[0].value);
+  const [priority, setPriority] = useState("Medium");
   const [difficulty, setDifficulty] = useState(3);
-  const [energyTime, setEnergyTime] = useState("any");
-  const [targetHours, setTargetHours] = useState(5);
-  const [deadline, setDeadline] = useState("");
+  const [energyTime, setEnergyTime] = useState("Morning");
+
+  // Page 2 states
+  const [exams, setExams] = useState([]);
+  const [newExamName, setNewExamName] = useState("");
+  const [newExamType, setNewExamType] = useState("");
+  const [newExamDueDate, setNewExamDueDate] = useState("");
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!name.trim()) return;
+  const addExam = () => {
+    if (newExamName.trim() && newExamType.trim() && newExamDueDate) {
+      setExams([
+        ...exams,
+        {
+          id: Date.now(),
+          name: newExamName.trim(),
+          type: newExamType.trim(),
+          dueDate: newExamDueDate,
+        },
+      ]);
+      setNewExamName("");
+      setNewExamType("");
+      setNewExamDueDate("");
+    }
+  };
+
+  const removeExam = (id) => {
+    setExams(exams.filter((exam) => exam.id !== id));
+  };
+
+  const handleSubmit = () => {
+    if (!moduleName.trim() || !category) return;
 
     onSubmit({
-      name: name.trim(),
-      color: selectedColor.bg,
-      type: moduleType,
+      name: moduleName.trim(),
+      category,
+      color,
+      priority,
       difficulty,
-      energyTime: energyTime === "any" ? null : energyTime,
-      targetHours: Number(targetHours),
-      deadline: deadline || null,
+      energyTime,
+      exams,
     });
 
-    setName("");
+    // Reset all
+    setModuleName("");
+    setCategory("");
+    setColor(pastelColors[0].value);
+    setPriority("Medium");
+    setDifficulty(3);
+    setEnergyTime("Morning");
+    setExams([]);
+    setStep(1);
     onClose();
   };
 
+  const nextStep = () => {
+    if (moduleName.trim() && category) {
+      setStep(2);
+    }
+  };
+
+  const prevStep = () => setStep(1);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-md px-4">
-      <div className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-gray-900 text-white px-8 py-5 flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-semibold">Create New Module</h2>
-            <p className="text-sm opacity-75 mt-0.5">Configure your personalized learning path</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-white/10 transition-colors"
-            aria-label="Close"
-          >
-            <X size={22} />
-          </button>
-        </div>
+    <>
+      {/* Blurred backdrop */}
+      <div
+        className="fixed inset-0 bg-white/10 backdrop-blur-lg z-40"
+        onClick={onClose}
+      />
 
-        <form onSubmit={handleSubmit} className="p-10">
-          {/* Three-Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            {/* Column 1: Basics */}
-            <div className="space-y-7">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Module Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Advanced Python Programming"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3.5 text-lg font-medium bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
-                  autoFocus
-                  required
-                />
-              </div>
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header*/}
+          <div className=" bg-slate-200 px-8 py-6 border-b border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-gray-800">
+                Add New Module
+              </h2>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select
-                  value={moduleType}
-                  onChange={(e) => setModuleType(e.target.value)}
-                  className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-black cursor-pointer"
-                >
-                  {MODULE_TYPES.map((t) => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Theme Color</label>
-                <div className="grid grid-cols-5 gap-3">
-                  {COLORS.map((color) => (
-                    <button
-                      key={color.id}
-                      type="button"
-                      onClick={() => setSelectedColor(color)}
-                      className={`aspect-square rounded-xl ${color.bg} transition-all hover:scale-105 ${
-                        selectedColor.id === color.id
-                          ? "ring-4 ring-offset-2 ring-gray-900 scale-105 shadow-lg"
-                          : "shadow"
-                      }`}
-                      aria-label={color.id}
-                    />
-                  ))}
-                </div>
-              </div>
+              {/* Close Button */}
+              <button
+                onClick={onClose}
+                className="w-12 h-12 flex items-center justify-center hover:bg-gray-200/50 rounded-lg transition focus:outline-none"
+                aria-label="Close"
+              >
+                <X size={24} className="text-black" strokeWidth={2} />
+              </button>
             </div>
 
-            {/* Column 2: AI Calibration */}
-            <div className="space-y-7">
-              <div>
-                <div className="flex items-center gap-2 mb-5">
-                  <Hash size={18} className="text-gray-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">AI Calibration</h3>
-                </div>
+            {/* Form Step Indicator */}
+            <div className="flex items-center gap-4">
+              <div
+                className={`h-2 flex-1 rounded-full ${
+                  step >= 1 ? "bg-slate-800" : "bg-gray-300"
+                }`}
+              />
+              <div
+                className={`h-2 flex-1 rounded-full ${
+                  step >= 2 ? "bg-slate-800" : "bg-gray-300"
+                }`}
+              />
+            </div>
 
-                <div className="space-y-6">
+            {/* Step Indicator Text */}
+            <p className="text-sm text-gray-700 mt-2">
+              Step {step}:{" "}
+              {step === 1 ? "Module Details" : "Exams & Assignments"}
+            </p>
+          </div>
+
+          {/* Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-8">
+            {step === 1 ? (
+              /* PAGE 1: Module Basics */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10">
+                {/* Column 1 */}
+                <div className="space-y-7">
                   <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <label className="text-sm font-medium text-gray-700">Difficulty Level</label>
-                      <span className="text-sm font-bold bg-gray-100 px-3 py-1.5 rounded-lg">{difficulty} / 5</span>
-                    </div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Module Name
+                    </label>
                     <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      step="1"
-                      value={difficulty}
-                      onChange={(e) => setDifficulty(Number(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-gray-900"
+                      type="text"
+                      value={moduleName}
+                      onChange={(e) => setModuleName(e.target.value)}
+                      placeholder="e.g., Advanced React"
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                     />
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-3 block">Preferred Study Time</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { id: "morning", icon: Sunrise, label: "Morning" },
-                        { id: "afternoon", icon: Sun, label: "Afternoon" },
-                        { id: "evening", icon: Moon, label: "Evening" },
-                      ].map((time) => (
+                    <label className="text-sm font-medium text-gray-700">
+                      Category
+                    </label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    >
+                      <option value="">Select category</option>
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Color Theme
+                    </label>
+                    <div className="mt-3 grid grid-cols-4 gap-3">
+                      {pastelColors.map((c) => (
                         <button
-                          key={time.id}
-                          type="button"
-                          onClick={() => setEnergyTime(time.id)}
-                          className={`py-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                            energyTime === time.id
-                              ? "border-gray-900 bg-gray-900 text-white shadow-md"
-                              : "border-gray-200 hover:border-gray-400"
+                          key={c.value}
+                          onClick={() => setColor(c.value)}
+                          className={`h-8 rounded-md transition-all ${
+                            color === c.value
+                              ? "ring-4 ring-gray-200 ring-offset-2"
+                              : "hover:scale-110"
                           }`}
-                        >
-                          <time.icon size={22} />
-                          <span className="text-sm font-medium">{time.label}</span>
-                        </button>
+                          style={{ backgroundColor: c.value }}
+                          title={c.name}
+                        />
                       ))}
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Column 3: Goals */}
-            <div className="space-y-7">
-              <div>
-                <div className="flex items-center gap-2 mb-5">
-                  <Clock size={18} className="text-gray-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Goals & Timeline</h3>
-                </div>
-
-                <div className="space-y-6">
+                {/* Column 2 */}
+                <div className="space-y-7">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Weekly Target Hours</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="40"
-                      value={targetHours}
-                      onChange={(e) => setTargetHours(Math.max(1, Math.min(40, Number(e.target.value))))}
-                      className="w-full px-4 py-3.5 text-center text-2xl font-bold bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black"
-                    />
+                    <label className="text-sm font-medium text-gray-700">
+                      Priority
+                    </label>
+                    <select
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    >
+                      {priorities.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Target Completion Date</label>
-                    <div className="relative">
-                      <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-                      <input
-                        type="date"
-                        value={deadline}
-                        onChange={(e) => setDeadline(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black font-medium"
-                      />
+                    <div className="flex justify-between items-center mt-5">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Module Difficulty
+                      </label>
+                      {difficulty > 0 && (
+                        <div className="mt-1 text-sm text-gray-700 tracking-widest">
+                          Level {difficulty}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex space-x-2 mt-5 mb-10">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                          key={level}
+                          onClick={() => setDifficulty(level)}
+                          className={`flex-1 h-5 cursor-pointer rounded transition-all duration-300 ${
+                            difficulty >= level
+                              ? "bg-slate-700"
+                              : "bg-slate-300"
+                          }`}
+                        ></div>
+                      ))}
                     </div>
                   </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Best Time to Study
+                    </label>
+                    <select
+                      value={energyTime}
+                      onChange={(e) => setEnergyTime(e.target.value)}
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                    >
+                      {energyTimes.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-sm text-gray-500">
+                      This is just a starting preference and can be adjusted
+                      based on your optimal learning time
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              /* PAGE 2: Exams & Assignments */
+              <div className="max-w-full mx-auto  ">
+                <h3 className="text-xl font-semibold text-gray-800 mb-8">
+                  Add Exams & Assignments
+                </h3>
+
+                {/* Add New Exam Form */}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Exam/Assignment Name"
+                    value={newExamName}
+                    onChange={(e) => setNewExamName(e.target.value)}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Type (e.g., Final, Quiz)"
+                    value={newExamType}
+                    onChange={(e) => setNewExamType(e.target.value)}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
+                  />
+
+                  <div className="flex gap-3">
+                    <input
+                      type="date"
+                      value={newExamDueDate}
+                      onChange={(e) => setNewExamDueDate(e.target.value)}
+                      className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
+                    />
+                    <button
+                      onClick={addExam}
+                      className="px-6 py-2 bg-slate-500 hover:bg-slate-700 text-white font-medium rounded-md transition shadow-md flex items-center justify-center"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Exam List */}
+                <div className="space-y-4  min-h-[200px] mt-4 mb-4">
+                  {exams.length === 0 ? (
+                    <div className="text-center text-gray-400 mt-10 mb-10 bg-blue-500">
+                      <p className="text-lg">
+                        No exams or assignments added yet
+                      </p>
+                      <p className="text-sm mt-2">
+                        You can skip this and add them later
+                      </p>
+                    </div>
+                  ) : (
+                    exams.map((exam) => (
+                      <div
+                        key={exam.id}
+                        className="bg-white py-3 px-5 rounded-md shadow-sm border border-gray-100 flex justify-between items-center hover:shadow-md transition mb-3 "
+                      >
+                        <div>
+                          <span className="font-semibold text-gray-800">
+                            {exam.name}
+                          </span>
+                          <span className="text-gray-500 mx-3">•</span>
+                          <span className="text-gray-600">{exam.type}</span>
+                          <span className="text-gray-500 mx-3">•</span>
+                          <span className="text-sm text-gray-500">
+                            Due {new Date(exam.dueDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <span
+                          onClick={() => removeExam(exam.id)}
+                          className="text-slate-800 hover:text-red-600 cursor-pointer text-sm transition"
+                        >
+                          Cancel
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 mt-12">
+          {/* Footer Buttons */}
+          <div className="bg-gray-50 px-8 py-6 border-t border-gray-100 flex justify-between">
             <button
-              type="button"
-              onClick={onClose}
-              className="px-8 py-3.5 rounded-xl font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              onClick={step === 1 ? onClose : prevStep}
+              className="px-10 py-2.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-medium rounded-xl transition"
             >
-              Cancel
+              {step === 1 ? "Cancel" : "Back"}
             </button>
-            <button
-              type="submit"
-              className="px-10 py-3.5 rounded-xl font-semibold text-white bg-gray-900 hover:bg-black transition-all shadow-lg hover:shadow-xl hover:scale-[1.02]"
-            >
-              Create Module
-            </button>
+
+            <div className="flex gap-4">
+              {step === 1 ? (
+                <button
+                  onClick={nextStep}
+                  disabled={!moduleName.trim() || !category}
+                  className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl shadow-md transition"
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl shadow-lg transition"
+                >
+                  Create Module
+                </button>
+              )}
+            </div>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
