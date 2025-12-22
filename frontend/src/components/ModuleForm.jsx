@@ -310,7 +310,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                     />
                     <button
                       onClick={addExam}
-                      className="px-6 py-2 bg-slate-500 hover:bg-slate-700 text-white font-medium rounded-md transition shadow-md flex items-center justify-center"
+                      className="px-6 py-2 bg-slate-700 hover:bg-slate-900 text-white font-medium rounded-md transition shadow-md flex items-center justify-center"
                     >
                       Add
                     </button>

@@ -1,7 +1,21 @@
 import axiosClient from "./axiosClient";
 
 export const createModule = async (moduleData) => {
-  const res = await axiosClient.post("/modules/", moduleData);
+  const payload = {
+    name: moduleData.name,
+    category: moduleData.category,
+    color: moduleData.color,
+    priority: moduleData.priority,
+    difficulty: moduleData.difficulty,
+    energy_time: moduleData.energy_time,
+    exams: (moduleData.exams || []).map((exam) => ({
+      name: exam.name,
+      exam_type: exam.type,
+      due_date: exam.dueDate,
+    })),
+  };
+
+  const res = await axiosClient.post("/modules/", payload);
   return res.data;
 };
 

@@ -81,27 +81,18 @@ const Modules = () => {
 
 const handleCreateModule = async (newModule) => {
   try {
-    // 1. Create module
+    // 1. Create module with exams bundled
     const createdModule = await createModule({
       name: newModule.name,
-      category: newModule.category.toUpperCase(),
+      category: newModule.category,
       color: newModule.color,
-      priority: newModule.priority.toUpperCase(),
+      priority: newModule.priority,
       difficulty: newModule.difficulty,
       energy_time: newModule.energyTime,
+      exams: newModule.exams,
     });
 
-    // 2. Create exams (if any)
-    for (const exam of newModule.exams) {
-      await createExam({
-        module_id: createdModule.id,
-        name: exam.name,
-        type: exam.type,
-        due_date: exam.dueDate,
-      });
-    }
-
-    // 3. Update UI immediately
+    // 2. Update UI immediately
     setModules((prev) => [createdModule, ...prev]);
 
     setIsModalOpen(false);
