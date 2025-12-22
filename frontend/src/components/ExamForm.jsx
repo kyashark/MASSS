@@ -1,31 +1,26 @@
-import React, { useState } from "react";
-import { createExam } from "../api/exams.js";
+import React, { useState, useEffect } from "react";
 
-const ExamForm = ({ moduleId, onCreated, onCancel }) => {
-  const [name, setName] = useState("");
-  const [examType, setExamType] = useState("");
-  const [dueDate, setDueDate] = useState("");
+const ExamForm = ({ moduleId, exam, onCreated, onUpdated, onCancel }) => {
+  const [name, setName] = useState(exam?.name || "");
+  const [examType, setExamType] = useState(exam?.exam_type || "MID");
+  const [dueDate, setDueDate] = useState(exam?.due_date || "");
   const [loading, setLoading] = useState(false);
+
+  const isEdit = !!exam;
 
   const handleSubmit = async () => {
     if (!name || !dueDate) return;
 
+    setLoading(true);
+
     try {
-      setLoading(true);
-
-      const createdExam = await createExam(moduleId, {
-        name: name,
-        exam_type: examType,   
-        due_date: dueDate,     
-      });
-
-      // Optimistic UI update
-      onCreated(createdExam);
-
-      setName("");
-      setDueDate("");
-    } catch (error) {
-      console.error("Failed to create exam", error);
+      if (isEdit) {
+        const updated = await onUpdated({ id: exam.id, name, exam_type: examType, due_date: dueDate });
+      } else {
+        const created = await onCreated({ name, exam_type: examType, due_date: dueDate });
+      }
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -40,13 +35,14 @@ const ExamForm = ({ moduleId, onCreated, onCancel }) => {
         onChange={(e) => setName(e.target.value)}
         className="col-span-2 px-3 py-2 border rounded-lg text-sm"
       />
-<input
-  type="text"
-  placeholder="Exam type (e.g. Mid, Final, Quiz)"
-  value={examType}
-  onChange={(e) => setExamType(e.target.value)}
-  className="px-3 py-2 border rounded-lg text-sm"
-/>
+
+      <input
+        type="text"
+        placeholder="Exam type (e.g., MID, FINAL, QUIZ)"
+        value={examType}
+        onChange={(e) => setExamType(e.target.value)}
+        className="px-3 py-2 border rounded-lg text-sm"
+      />
 
       <input
         type="date"
@@ -56,19 +52,12 @@ const ExamForm = ({ moduleId, onCreated, onCancel }) => {
       />
 
       <div className="col-span-4 flex justify-end gap-2">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 border rounded-lg text-sm"
-        >
+        <button onClick={onCancel} className="px-4 py-2 border rounded-lg text-sm">
           Cancel
         </button>
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="px-4 py-2 bg-gray-800 hover:bg-slate-900 text-white rounded-lg text-sm"
-        >
-          {loading ? "Saving..." : "Save Exam"}
+        <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm">
+          {loading ? "Saving..." : isEdit ? "Update Exam" : "Save Exam"}
         </button>
       </div>
     </div>

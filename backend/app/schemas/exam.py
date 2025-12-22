@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import date
+from typing import Optional
 
 class ExamBase(BaseModel):
     name: str
@@ -9,6 +10,12 @@ class ExamBase(BaseModel):
 
 class ExamCreate(ExamBase):
     pass
+
+
+class ExamUpdate(BaseModel):
+    name: Optional[str] = None
+    exam_type: Optional[str] = None
+    due_date: Optional[date] = None
 
 
 class ExamResponse(ExamBase):
