@@ -26,15 +26,9 @@ class Module(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True)
-
-
     name = Column(String, nullable=False)
-    category = Column(Enum(Category), nullable=False)
-    
-    # Visual properties
+    category = Column(String, nullable=False)
     color = Column(String, default="#E89BAE")
-    
-    # Study Logic properties
     priority = Column(Enum(Priority), default=Priority.MEDIUM)
     difficulty = Column(Integer, default=3) # 1 to 5
     energy_time = Column(String, nullable=False)

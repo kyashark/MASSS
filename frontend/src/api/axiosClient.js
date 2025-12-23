@@ -7,7 +7,7 @@ const axiosClient = axios.create({
   },
 });
 
-// 🔥 Inject user_id=1 automatically
+//  Inject user_id=1 automatically
 axiosClient.interceptors.request.use((config) => {
   const userId = 1; // TEMP until auth exists
 

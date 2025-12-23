@@ -1,66 +1,17 @@
-// src/pages/Modules.jsx
-import React, { useState,useEffect } from "react";
-import { Plus, ArrowLeft,Book } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, ArrowLeft, Book } from "lucide-react";
 import ModuleForm from "../../components/ModuleForm.jsx";
 import ModuleDetailPage from "../../components/ModuleDetailPage.jsx";
 import ModuleCard from "../../components/ModuleCard.jsx";
 
 // API
-import { createModule, createExam, fetchModules } from "../../api/modules";
-
-// Mock Data
-// const MOCK_MODULES = [
-//   {
-//     id: 1,
-//     name: "Learn Python",
-//     tasks: 12,
-//     progress: 45,
-//     color: "bg-blue-500",
-//     type: "coding",
-//     difficulty: 3,
-//     priority: "Medium",
-//   },
-//   {
-//     id: 2,
-//     name: "Data Structures",
-//     tasks: 8,
-//     progress: 20,
-//     color: "bg-purple-500",
-//     type: "math",
-//     difficulty: 5,
-//     priority: "High",
-//   },
-//   {
-//     id: 3,
-//     name: "Algorithms",
-//     tasks: 15,
-//     progress: 60,
-//     color: "bg-green-500",
-//     type: "coding",
-//     difficulty: 4,
-//     priority: "High",
-//   },
-//   {
-//     id: 4,
-//     name: "Databases",
-//     tasks: 10,
-//     progress: 30,
-//     color: "bg-red-500",
-//     type: "backend",
-//     difficulty: 3,
-//     priority: "Medium",
-//   },
-//   {
-//     id: 5,
-//     name: "Operating Systems",
-//     tasks: 9,
-//     progress: 15,
-//     color: "bg-yellow-500",
-//     type: "theory",
-//     difficulty: 5,
-//     priority: "High",
-//   },
-// ];
+import {
+  createModule,
+  createExam,
+  fetchModules,
+  updateModule,
+  deleteModule,
+} from "../../api/modules";
 
 const Modules = () => {
   const [modules, setModules] = useState([]);
@@ -68,8 +19,8 @@ const Modules = () => {
   const [selectedModule, setSelectedModule] = useState(null);
 
   useEffect(() => {
-  fetchModules().then(setModules);
-}, []);
+    fetchModules().then(setModules);
+  }, []);
 
   const handleOpenModule = (module) => {
     setSelectedModule(module);
@@ -79,37 +30,91 @@ const Modules = () => {
     setSelectedModule(null);
   };
 
-const handleCreateModule = async (newModule) => {
-  try {
-    // 1. Create module with exams bundled
-    const createdModule = await createModule({
-      name: newModule.name,
-      category: newModule.category,
-      color: newModule.color,
-      priority: newModule.priority,
-      difficulty: newModule.difficulty,
-      energy_time: newModule.energyTime,
-      exams: newModule.exams,
-    });
+  const handleCreateModule = async (newModule) => {
+    try {
+      // 1. Create module with exams bundled
+      const createdModule = await createModule({
+        name: newModule.name,
+        category: newModule.category,
+        color: newModule.color,
+        priority: newModule.priority,
+        difficulty: newModule.difficulty,
+        // Use camelCase here; API layer maps to snake_case
+        energyTime: newModule.energyTime,
+        exams: newModule.exams,
+      });
 
-    // 2. Update UI immediately
-    setModules((prev) => [createdModule, ...prev]);
+      // 2. Update UI immediately
+      setModules((prev) => [createdModule, ...prev]);
 
-    setIsModalOpen(false);
-  } catch (err) {
-    console.error("Failed to create module", err);
-  }
-};
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error("Failed to create module", err);
+    }
+  };
 
+  const [editingModule, setEditingModule] = useState(null);
+
+  const handleEditModule = (module) => {
+    setIsModalOpen(true);
+    setEditingModule(module);
+  };
+
+  const handleUpdateModule = async (updatedModule) => {
+    try {
+      // 1. Format the data
+      const apiData = {
+        id: updatedModule.id,
+        name: updatedModule.name,
+        category: updatedModule.category,
+        color: updatedModule.color,
+        priority: updatedModule.priority,
+        difficulty: updatedModule.difficulty,
+        energyTime: updatedModule.energyTime,
+        exams: updatedModule.exams.map((exam) => {
+          const isTempId = exam.id > 2000000000; // Rough check for timestamp
+
+          return {
+            id: isTempId ? null : exam.id,
+            name: exam.name,
+            exam_type: exam.type,
+            due_date: exam.dueDate,
+          };
+        }),
+      };
+
+      // 2. Send the formatted data
+      const savedModule = await updateModule(updatedModule.id, apiData);
+
+      // 3. Update UI
+      setModules((prev) =>
+        prev.map((m) => (m.id === savedModule.id ? savedModule : m))
+      );
+
+      setIsModalOpen(false);
+      setEditingModule(null);
+    } catch (err) {
+      console.error("Failed to update module", err);
+      alert(err.response?.data?.message || "Update failed");
+    }
+  };
+
+  const handleDeleteModule = async (moduleId) => {
+    if (!confirm("Are you sure you want to delete this module?")) return;
+    try {
+      await deleteModule(moduleId);
+      setModules((prev) => prev.filter((m) => m.id !== moduleId));
+    } catch (err) {
+      console.error("Failed to delete module", err);
+    }
+  };
 
   return (
     <>
       {/* PAGE CONTAINER — FIXED HEIGHT (NO PAGE SCROLL) */}
       <div className="h-screen w-full flex overflow-hidden">
-
         {/* LEFT PANEL */}
         <div className="w-full max-w-md bg-gray-50 border-r border-gray-200 flex flex-col">
-
           {/* Back Button */}
           <div className="px-8 pt-6 pb-6">
             <button
@@ -131,7 +136,6 @@ const handleCreateModule = async (newModule) => {
 
           {/* CONTENT AREA (FLEX COLUMN, NO SCROLL HERE) */}
           <div className="flex-1 px-8 pb-8 flex flex-col overflow-hidden">
-
             {/* Top Controls (STATIC) */}
             <div className="flex items-center gap-2 pb-4 pt-2">
               <input
@@ -163,13 +167,13 @@ const handleCreateModule = async (newModule) => {
               <div className="flex-1 overflow-y-auto p-1 scrollbar-hide">
                 <div className="grid grid-cols-1 gap-6">
                   {modules.map((module) => (
-                    <div
+                    <ModuleCard
                       key={module.id}
+                      module={module}
                       onClick={() => handleOpenModule(module)}
-                      className="cursor-pointer transition-transform duration-200 hover:scale-[1.01]"
-                    >
-                      <ModuleCard module={module} />
-                    </div>
+                      onEdit={handleEditModule}
+                      onDelete={handleDeleteModule}
+                    />
                   ))}
                 </div>
               </div>
@@ -184,7 +188,9 @@ const handleCreateModule = async (newModule) => {
           ) : (
             <div className=" flex items-center justify-center h-full text-gray-400 text-slate-300">
               <div className="text-center">
-                <div className="text-6xl mb-6 flex items-center justify-center "><Book size={48} className="text-slate-300"/></div>
+                <div className="text-6xl mb-6 flex items-center justify-center ">
+                  <Book size={48} className="text-slate-300" />
+                </div>
                 <p className="text-xl font-medium">
                   Select a module from the left to view details
                 </p>
@@ -200,8 +206,15 @@ const handleCreateModule = async (newModule) => {
       {/* CREATE MODULE MODAL */}
       <ModuleForm
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleCreateModule}
+        // When closing, we must close modal AND clear the editing module so "Add" works next time
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingModule(null);
+        }}
+        // Dynamically switch between Update and Create based on if we are editing
+        onSubmit={editingModule ? handleUpdateModule : handleCreateModule}
+        // PASS THE DATA HERE
+        initialModule={editingModule}
       />
     </>
   );
