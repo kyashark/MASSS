@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-
-import { X, SendHorizontal } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
 
 const pastelColors = [
   { name: "Dusty Pink", value: "#E89BAE" },
@@ -23,22 +22,64 @@ const categories = [
 const priorities = ["Low", "Medium", "High"];
 const energyTimes = ["Morning", "Afternoon", "Evening"];
 
-const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
+const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
   const [step, setStep] = useState(1); // 1 = basics, 2 = exams
-
-  // Page 1 states
+  
   const [moduleName, setModuleName] = useState("");
   const [category, setCategory] = useState("");
   const [color, setColor] = useState(pastelColors[0].value);
   const [priority, setPriority] = useState("Medium");
   const [difficulty, setDifficulty] = useState(3);
   const [energyTime, setEnergyTime] = useState("Morning");
-
-  // Page 2 states
+  
+  // We keep exams in state so they are preserved during update, 
+  // even if we don't show the exam step.
   const [exams, setExams] = useState([]);
+
   const [newExamName, setNewExamName] = useState("");
   const [newExamType, setNewExamType] = useState("");
   const [newExamDueDate, setNewExamDueDate] = useState("");
+
+  // Ensure resetForm is initialized before any early returns or effects use it
+  function resetForm() {
+    setModuleName("");
+    setCategory("");
+    setColor(pastelColors[0].value);
+    setPriority("Medium");
+    setDifficulty(3);
+    setEnergyTime("Morning");
+    setExams([]);
+    setStep(1);
+
+    setNewExamName("");     
+    setNewExamType("");     
+    setNewExamDueDate("");
+  }
+
+  // Populate form when editing
+  useEffect(() => {
+    if (initialModule) {
+      setModuleName(initialModule.name || "");
+      setCategory(initialModule.category || "");
+      setColor(initialModule.color || pastelColors[0].value);
+      setPriority(initialModule.priority || "Medium");
+      setDifficulty(initialModule.difficulty || 3);
+      setEnergyTime(initialModule.energy_time || "Morning");
+      
+      // Load existing exams so they aren't lost during update
+      setExams(
+        initialModule.exams?.map((e) => ({
+          id: e.id,
+          name: e.name,
+          type: e.exam_type,
+          dueDate: e.due_date,
+        })) || []
+      );
+    } else {
+        // Reset if adding new
+        resetForm();
+    }
+  }, [initialModule]);
 
   if (!isOpen) return null;
 
@@ -67,24 +108,21 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
     if (!moduleName.trim() || !category) return;
 
     onSubmit({
+      id: initialModule?.id,
       name: moduleName.trim(),
       category,
       color,
       priority,
       difficulty,
       energyTime,
-      exams,
+      exams, // Sends existing exams back to backend
     });
 
-    // Reset all
-    setModuleName("");
-    setCategory("");
-    setColor(pastelColors[0].value);
-    setPriority("Medium");
-    setDifficulty(3);
-    setEnergyTime("Morning");
-    setExams([]);
-    setStep(1);
+    handleClose();
+  };
+
+  const handleClose = () => {
+    resetForm();
     onClose();
   };
 
@@ -101,7 +139,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
       {/* Blurred backdrop */}
       <div
         className="fixed inset-0 bg-white/10 backdrop-blur-lg z-40"
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* Modal */}
@@ -110,42 +148,45 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
           className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header*/}
-          <div className=" bg-slate-200 px-8 py-6 border-b border-gray-100">
+          {/* Header */}
+          <div className="bg-slate-200 px-8 py-6 border-b border-gray-100">
             <div className="flex justify-between items-center mb-4">
+              {/* ✅ CHANGE 1: Dynamic Title */}
               <h2 className="text-2xl font-semibold text-gray-800">
-                Add New Module
+                {initialModule ? "Update Module" : "Add New Module"}
               </h2>
 
-              {/* Close Button */}
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="w-12 h-12 flex items-center justify-center hover:bg-gray-200/50 rounded-lg transition focus:outline-none"
-                aria-label="Close"
               >
                 <X size={24} className="text-black" strokeWidth={2} />
               </button>
             </div>
 
-            {/* Form Step Indicator */}
-            <div className="flex items-center gap-4">
-              <div
-                className={`h-2 flex-1 rounded-full ${
-                  step >= 1 ? "bg-slate-800" : "bg-gray-300"
-                }`}
-              />
-              <div
-                className={`h-2 flex-1 rounded-full ${
-                  step >= 2 ? "bg-slate-800" : "bg-gray-300"
-                }`}
-              />
-            </div>
-
-            {/* Step Indicator Text */}
-            <p className="text-sm text-gray-700 mt-2">
-              Step {step}:{" "}
-              {step === 1 ? "Module Details" : "Exams & Assignments"}
-            </p>
+            {/* ✅ CHANGE 2: Hide Step Indicator if in Edit Mode */}
+            {!initialModule && (
+              <div className="flex items-center gap-4">
+                <div
+                  className={`h-2 flex-1 rounded-full ${
+                    step >= 1 ? "bg-slate-800" : "bg-gray-300"
+                  }`}
+                />
+                <div
+                  className={`h-2 flex-1 rounded-full ${
+                    step >= 2 ? "bg-slate-800" : "bg-gray-300"
+                  }`}
+                />
+              </div>
+            )}
+            
+            {/* Step Indicator Text (Only show in Create Mode) */}
+            {!initialModule && (
+                <p className="text-sm text-gray-700 mt-2">
+                Step {step}:{" "}
+                {step === 1 ? "Module Details" : "Exams & Assignments"}
+                </p>
+            )}
           </div>
 
           {/* Content - Scrollable */}
@@ -268,22 +309,16 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                         </option>
                       ))}
                     </select>
-                    <p className="mt-2 text-sm text-gray-500">
-                      This is just a starting preference and can be adjusted
-                      based on your optimal learning time
-                    </p>
                   </div>
                 </div>
               </div>
             ) : (
-              /* PAGE 2: Exams & Assignments */
-              <div className="max-w-full mx-auto  ">
+              /* PAGE 2: Exams & Assignments (Only accessed in Create Mode) */
+              <div className="max-w-full mx-auto">
                 <h3 className="text-xl font-semibold text-gray-800 mb-8">
                   Add Exams & Assignments
                 </h3>
-
-                {/* Add New Exam Form */}
-
+                {/* ... Exam Form Inputs ... */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <input
                     type="text"
@@ -292,7 +327,6 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                     onChange={(e) => setNewExamName(e.target.value)}
                     className="px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                   />
-
                   <input
                     type="text"
                     placeholder="Type (e.g., Final, Quiz)"
@@ -300,7 +334,6 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                     onChange={(e) => setNewExamType(e.target.value)}
                     className="px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                   />
-
                   <div className="flex gap-3">
                     <input
                       type="date"
@@ -310,29 +343,23 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                     />
                     <button
                       onClick={addExam}
-                      className="px-6 py-2 bg-slate-500 hover:bg-slate-700 text-white font-medium rounded-md transition shadow-md flex items-center justify-center"
+                      className="px-6 py-2 bg-slate-700 hover:bg-slate-900 text-white font-medium rounded-md transition shadow-md flex items-center justify-center"
                     >
                       Add
                     </button>
                   </div>
                 </div>
 
-                {/* Exam List */}
-                <div className="space-y-4  min-h-[200px] mt-4 mb-4">
+                <div className="space-y-4 min-h-[200px] mt-4 mb-4">
                   {exams.length === 0 ? (
                     <div className="text-center text-gray-400 pt-10">
-                      <p className="text-md">
-                        No exams or assignments added yet
-                      </p>
-                      <p className="text-sm mt-2">
-                        You can skip this and add them later
-                      </p>
+                      <p>No exams added yet</p>
                     </div>
                   ) : (
                     exams.map((exam) => (
                       <div
                         key={exam.id}
-                        className="bg-white py-3 px-5 rounded-md shadow-sm border border-gray-100 flex justify-between items-center hover:shadow-md transition mb-3 "
+                        className="bg-white py-3 px-5 rounded-md shadow-sm border border-gray-100 flex justify-between items-center mb-3"
                       >
                         <div>
                           <span className="font-semibold text-gray-800">
@@ -340,14 +367,10 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
                           </span>
                           <span className="text-gray-500 mx-3">•</span>
                           <span className="text-gray-600">{exam.type}</span>
-                          <span className="text-gray-500 mx-3">•</span>
-                          <span className="text-sm text-gray-500">
-                            Due {new Date(exam.dueDate).toLocaleDateString()}
-                          </span>
                         </div>
                         <span
                           onClick={() => removeExam(exam.id)}
-                          className="text-slate-800 hover:text-red-600 cursor-pointer text-sm transition"
+                          className="text-slate-800 hover:text-red-600 cursor-pointer text-sm"
                         >
                           Cancel
                         </span>
@@ -362,28 +385,43 @@ const ModuleForm = ({ isOpen, onClose, onSubmit }) => {
           {/* Footer Buttons */}
           <div className="bg-gray-50 px-8 py-6 border-t border-gray-100 flex justify-between">
             <button
-              onClick={step === 1 ? onClose : prevStep}
+              onClick={step === 1 ? handleClose : prevStep}
               className="px-10 py-2.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-medium rounded-xl transition"
             >
               {step === 1 ? "Cancel" : "Back"}
             </button>
 
             <div className="flex gap-4">
-              {step === 1 ? (
-                <button
-                  onClick={nextStep}
-                  disabled={!moduleName.trim() || !category}
-                  className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium rounded-xl shadow-md transition"
-                >
-                  Next
-                </button>
-              ) : (
+              {/* ✅ CHANGE 3: Logic to skip Step 2 on Edit */}
+              {initialModule ? (
+                // EDIT MODE: Single step Update
                 <button
                   onClick={handleSubmit}
-                  className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl shadow-lg transition"
+                  disabled={!moduleName.trim() || !category}
+                  className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-medium rounded-xl shadow-lg transition"
                 >
-                  Create Module
+                  Update Module
                 </button>
+              ) : (
+                // CREATE MODE: Normal 2-Step Flow
+                <>
+                    {step === 1 ? (
+                        <button
+                        onClick={nextStep}
+                        disabled={!moduleName.trim() || !category}
+                        className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-medium rounded-xl shadow-md transition"
+                        >
+                        Next
+                        </button>
+                    ) : (
+                        <button
+                        onClick={handleSubmit}
+                        className="px-10 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl shadow-lg transition"
+                        >
+                        Create Module
+                        </button>
+                    )}
+                </>
               )}
             </div>
           </div>
