@@ -5,16 +5,17 @@ import enum
 from app.core.database import Base
 
 class TaskStatus(str, enum.Enum):
-    PENDING = "Pending"       # Waiting to be done
-    IN_PROGRESS = "In Progress" # Currently in a Pomodoro session
-    COMPLETED = "Completed"   # Done
-    SKIPPED = "Skipped"       # User skipped (Reschedule this!)
-    ARCHIVED = "Archived"     # User deleted (Ignore this)
+    PENDING = "PENDING"           # Simple, matching keys
+    IN_PROGRESS = "IN_PROGRESS"   # No spaces! Easier for DB.
+    COMPLETED = "COMPLETED"
+    SKIPPED = "SKIPPED"
+    ARCHIVED = "ARCHIVED"
 
 class PriorityLevel(str, enum.Enum):
-    LOW = "Low"       # Value: 1
-    MEDIUM = "Medium" # Value: 2
-    HIGH = "High"     # Value: 3
+    LOW = "LOW"       # Value: 1
+    MEDIUM = "MEDIUM" # Value: 2
+    HIGH = "HIGH"     # Value: 3
+    
 class Task(Base):
     __tablename__ = "tasks"
 
@@ -37,3 +38,6 @@ class Task(Base):
     # 4. LIFECYCLE (RL Data)
     status = Column(Enum(TaskStatus), default=TaskStatus.PENDING)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # 5. SESSION LOGS (Pomodoro tracking)
+    sessions = relationship("PomodoroSession", back_populates="task", cascade="all, delete-orphan")
