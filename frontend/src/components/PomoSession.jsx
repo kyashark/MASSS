@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Play, Pause, Square, X, Star, CheckCircle, RotateCcw, Ban, ArrowLeft, Coffee, SkipForward } from "lucide-react";
+// Added new icons: Armchair, FastForward, Trash2, Clock
+import { Play, Pause, Square, X, Star, CheckCircle, RotateCcw, Ban, ArrowLeft, Coffee, Armchair, FastForward, Trash2, Clock } from "lucide-react";
 import { startSession, endSession } from "../api/sessions";
 import { updateTaskStatus } from "../api/tasks";
-import SessionSidebar from "./SessionSideBar.jsx";
-
+import SessionSidebar from "./SessionSidebar";
 
 const PomoSession = ({ task, onClose, onComplete, onUpdateTask }) => {
   // --- STATES ---
-  const [mode, setMode] = useState("LOBBY"); // Modes: LOBBY, RUNNING, PAUSED, FEEDBACK, BREAK_PROMPT, BREAK
-  const [seconds, setSeconds] = useState(0); // Work Timer
-  const [breakSeconds, setBreakSeconds] = useState(0); // Break Timer
+  // MODES: LOBBY | RUNNING | PAUSED | FEEDBACK | BREAK
+  const [mode, setMode] = useState("LOBBY"); 
+  const [seconds, setSeconds] = useState(0); 
   const [sessionId, setSessionId] = useState(null);
   const [isStarting, setIsStarting] = useState(false);
   
@@ -17,19 +17,18 @@ const PomoSession = ({ task, onClose, onComplete, onUpdateTask }) => {
   const [focusRating, setFocusRating] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // Time Config
+  const workDuration = 25 * 60; 
+  const shortBreak = 5 * 60;    
+  const longBreak = 15 * 60;
 
-  // Stats Logic
-  const SESSION_DURATION = 25 * 60; // 25 Minutes
-  const SHORT_BREAK = 5 * 60;       // 5 Minutes
-  const LONG_BREAK = 15 * 60;       // 15 Minutes usually (after 4 sessions)
-
-  // We track local completed sessions to calculate breaks dynamically
-  // If task has previous sessions, we add to them.
-  const [sessionsCompletedNow, setSessionsCompletedNow] = useState(0);
+  // Session Logic
+  // Track completed sessions locally to handle breaks correctly
+  const [completedSessions, setCompletedSessions] = useState(task.sessions_count || 0);
   
-  const currentTotalSessions = (task.sessions_count || 0) + sessionsCompletedNow + 1; 
-  const isOvertime = currentTotalSessions > task.estimated_pomodoros;
-  const totalDisplaySessions = Math.max(task.estimated_pomodoros, currentTotalSessions);
+  const currentWorkSessionNum = completedSessions + 1;
+  const totalSessions = Math.max(task.estimated_pomodoros, currentWorkSessionNum);
+  const isOvertime = currentWorkSessionNum > task.estimated_pomodoros;
 
   // --- ACTIONS ---
 
@@ -39,8 +38,9 @@ const PomoSession = ({ task, onClose, onComplete, onUpdateTask }) => {
     try {
       const session = await startSession(task.id);
       setSessionId(session.id);
-      setSeconds(0);
       setMode("RUNNING");
+      // Ensure task is marked IN_PROGRESS when we start
+      await updateTaskStatus(task.id, "IN_PROGRESS");
     } catch (err) {
       alert("Failed to start.");
     } finally {
@@ -48,18 +48,12 @@ const PomoSession = ({ task, onClose, onComplete, onUpdateTask }) => {
     }
   };
 
-  const handleResume = () => {
-    setMode("RUNNING");
-  };
-
-  const handleStop = () => {
-    setMode("FEEDBACK");
-  };
+  const handleResume = () => setMode("RUNNING");
+  const handleStop = () => setMode("FEEDBACK");
 
   const handleRestart = async () => {
     if (!confirm("Restart timer? This session will be discarded.")) return;
     if (sessionId) {
-      // Abort previous session in DB
       await endSession(sessionId, { 
         is_completed: false, 
         focus_rating: 1, 
@@ -70,109 +64,86 @@ const PomoSession = ({ task, onClose, onComplete, onUpdateTask }) => {
     handleStart(); 
   };
 
-
-
-    // WORK TIMER
-// --- TIMERS ---
+  // TIMER
   useEffect(() => {
     let interval = null;
-
-    // WORK TIMER
-    if (mode === "RUNNING") {
+    if (mode === "RUNNING" || mode === "BREAK") {
       interval = setInterval(() => {
         setSeconds((s) => s + 1);
       }, 1000);
     }
-    // BREAK TIMER
-    else if (mode === "BREAK") {
-      interval = setInterval(() => {
-        setBreakSeconds((s) => {
-          if (s <= 1) {
-             // Break finished automatically
-             // You might want to auto-start or go to lobby. 
-             // Here we go to LOBBY to let user click start.
-             setMode("LOBBY"); 
-             return 0;
-          }
-          return s - 1;
-        });
-      }, 1000);
-    }
-
     return () => clearInterval(interval);
   }, [mode]);
 
+  // Format MM:SS
   const formatTime = (totalSeconds) => {
     const m = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
     const s = (totalSeconds % 60).toString().padStart(2, "0");
     return `${m}:${s}`;
   };
 
-  // --- BREAK LOGIC ---
-  const handleStartBreak = () => {
-    // Determine break length: After every 4th session -> Long Break
-    const isLongBreak = (currentTotalSessions - 1) % 4 === 0 && (currentTotalSessions - 1) !== 0;
-    setBreakSeconds(isLongBreak ? LONG_BREAK : SHORT_BREAK);
-    setMode("BREAK");
-  };
-
-  const handleSkipBreak = () => {
-    // Skip immediately to starting next session
-    handleStart();
-  };
+  // Break Logic
+  const getBreakDuration = () => (completedSessions > 0 && completedSessions % 4 === 0) ? longBreak : shortBreak;
+  const isBreakMode = mode === "BREAK";
+  const breakTimeTotal = getBreakDuration();
 
   // --- SUBMIT LOGIC ---
   const handleSubmit = async (action) => {
-    // Basic validation
-    if (action !== "CANCEL_TASK" && !focusRating) {
+    // action types: "DONE_TASK", "PAUSE_TASK", "DISCARD_SESSION", "START_BREAK", "SKIP_BREAK"
+    
+    if (!["SKIP_BREAK", "DISCARD_SESSION", "START_BREAK"].includes(action) && !focusRating && mode === "FEEDBACK") {
         alert("Please rate your focus!");
         return;
     }
     setLoading(true);
 
     try {
-      const isTimerFinished = seconds >= SESSION_DURATION;
-      let finalEndType = "STOPPED"; 
-      
-      if (action === "CANCEL_TASK") finalEndType = "ABORTED"; 
-      else if (isTimerFinished) finalEndType = "COMPLETED";
+      // 1. Logic for Saving the WORK Session
+      if (mode === "FEEDBACK") {
+          const isTimerFinished = seconds >= workDuration;
+          
+          let endType = "STOPPED"; // Default (Partial work)
+          if (isTimerFinished) endType = "COMPLETED";
+          if (action === "DISCARD_SESSION") endType = "ABORTED"; 
 
-      // 1. Update Session in DB
-      if (sessionId) {
-        await endSession(sessionId, {
-          is_completed: isTimerFinished,
-          focus_rating: focusRating || 1,
-          end_type: finalEndType
-        });
+          await endSession(sessionId, {
+            is_completed: isTimerFinished,
+            focus_rating: focusRating || 1,
+            end_type: endType
+          });
+
+          // Increment count locally if valid work done
+          if (action !== "DISCARD_SESSION" && isTimerFinished) {
+              setCompletedSessions(prev => prev + 1);
+          }
       }
 
-      // 2. Handle Task Status / UI Flow
+      // 2. Navigation Logic
       if (action === "DONE_TASK") {
-        // User explicitly marks task as Done
-        await updateTaskStatus(task.id, "COMPLETED");
-        if (onComplete) onComplete(task.id);
-        onClose();
+          await updateTaskStatus(task.id, "COMPLETED");
+          if (onComplete) onComplete(task.id);
+          onClose();
+      }
+      else if (action === "PAUSE_TASK") {
+          // "Stop for now" -> Task remains IN_PROGRESS
+          await updateTaskStatus(task.id, "IN_PROGRESS");
+          if (onUpdateTask) onUpdateTask(); 
+          onClose();
+      }
+      else if (action === "DISCARD_SESSION") {
+          // "Retry Later" -> Task remains IN_PROGRESS, close window
+          await updateTaskStatus(task.id, "IN_PROGRESS");
+          onClose();
+      }
+      else if (action === "START_BREAK") {
+          setSeconds(0);
+          setMode("BREAK");
       } 
-      else if (action === "CANCEL_TASK") {
-        await updateTaskStatus(task.id, "SKIPPED"); 
-        if (onUpdateTask) onUpdateTask(); 
-        onClose();
+      else if (action === "SKIP_BREAK") {
+          setSeconds(0);
+          handleStart(); // Start next session immediately
       }
-      else if (action === "STOP_FOR_NOW") {
-         await updateTaskStatus(task.id, "PENDING");
-         onClose();
-      }
-      else if (action === "CONTINUE_FLOW") {
-         // This is triggered when timer finished naturally
-         // Increment local session count so dots update
-         setSessionsCompletedNow(prev => prev + 1);
-         setFocusRating(0); // Reset for next time
-         setSessionId(null); // Clear ID
-         
-         // Trigger Break Prompt
-         setMode("BREAK_PROMPT");
-      }
-
+      
     } catch (err) {
       console.error(err);
     } finally {
@@ -180,133 +151,143 @@ const PomoSession = ({ task, onClose, onComplete, onUpdateTask }) => {
     }
   };
 
- return (
-    // CHANGED: Main Container is now a Flex Row
-    <div className="fixed inset-0 z-[100] bg-gray-950 text-white flex font-sans">
+  return (
+    <div className={`fixed inset-0 z-[100] text-white flex font-sans transition-colors duration-1000 ${isBreakMode ? "bg-slate-900" : "bg-gray-900"}`}>
       
-      {/* --- LEFT SIDEBAR --- */}
-      <SessionSidebar 
-        totalSessions={totalDisplaySessions} 
-        currentSessionNum={currentTotalSessions}
+      {/* SIDEBAR (Added prop for currentWorkSessionNum) */}
+      <SessionSidebar
+        totalSessions={totalSessions}
+        currentSessionNum={currentWorkSessionNum}
         mode={mode}
       />
-
-      {/* --- RIGHT MAIN CONTENT --- */}
-      <div className="flex-1 flex flex-col relative bg-gray-900">
-
-        {/* HEADER (Moved inside right pane) */}
-        <div className="absolute top-6 left-8 text-xl font-bold tracking-widest opacity-50 flex items-center gap-2">
-          <Coffee size={24} /> {mode === "BREAK" ? "BREAK TIME" : "FOCUS MODE"}
+      
+      <div className="flex-1 flex flex-col items-center justify-center relative">
+        
+        {/* HEADER */}
+        <div className="absolute top-6 left-6 text-xl font-bold tracking-widest opacity-50 flex items-center gap-2">
+          {isBreakMode ? <><Armchair size={24}/> BREAK TIME</> : <><Coffee size={24}/> FOCUS MODE</>}
         </div>
         
         {/* CLOSE BUTTON */}
         <button 
-          onClick={() => mode === "RUNNING" ? setMode("FEEDBACK") : onClose()}
-          className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white"
+          onClick={() => mode === "LOBBY" ? onClose() : handleStop()} 
+          className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full"
         >
           <X size={24} />
         </button>
 
-        {/* CENTERED CONTENT AREA */}
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
+        {/* --- LOBBY --- */}
+        {mode === "LOBBY" && (
+          <div className="text-center space-y-8 animate-in zoom-in duration-300">
+            <div>
+              <h2 className="text-gray-400 uppercase tracking-widest text-sm mb-2">Ready?</h2>
+              <h1 className="text-4xl font-bold max-w-2xl">{task.name}</h1>
+              <p className="mt-2 text-gray-500 font-medium">
+                {isOvertime ? <span className="text-orange-400">Overtime Session</span> : `Session ${currentWorkSessionNum} of ${totalSessions}`}
+              </p>
+            </div>
             
-            {/* --- LOBBY --- */}
-            {mode === "LOBBY" && (
-              <div className="text-center space-y-8 animate-in zoom-in duration-300">
-                <div>
-                  <h2 className="text-gray-400 uppercase tracking-widest text-sm mb-2">Ready?</h2>
-                  <h1 className="text-5xl font-bold max-w-3xl leading-tight">{task.name}</h1>
-                </div>
-                
-                <button 
-                  onClick={handleStart}
-                  disabled={isStarting}
-                  className={`px-12 py-6 bg-white text-black font-bold text-2xl rounded-full transition-all ${isStarting ? "opacity-50" : "hover:scale-105 shadow-2xl shadow-white/20"}`}
-                >
-                  {isStarting ? "STARTING..." : <span className="flex items-center gap-3"><Play size={28} fill="currentColor"/> START SESSION</span>}
-                </button>
-              </div>
-            )}
+            <button 
+              onClick={handleStart}
+              disabled={isStarting}
+              className={`px-10 py-5 bg-white text-black font-bold text-xl rounded-full transition-all ${isStarting ? "opacity-50" : "hover:scale-105 shadow-xl shadow-white/10"}`}
+            >
+              {isStarting ? "STARTING..." : <span className="flex items-center gap-3"><Play size={24} fill="currentColor"/> START SESSION</span>}
+            </button>
+          </div>
+        )}
 
-            {/* --- TIMER (RUNNING / PAUSED) --- */}
-            {(mode === "RUNNING" || mode === "PAUSED") && (
-              <div className="text-center w-full max-w-4xl">
-                <h2 className="text-gray-500 font-medium tracking-wide uppercase mb-10 text-lg">{task.name}</h2>
-                
-                <div className={`text-[160px] font-mono font-bold leading-none tabular-nums tracking-tighter drop-shadow-2xl transition-colors ${seconds >= SESSION_DURATION ? "text-green-400" : "text-white"}`}>
-                  {formatTime(seconds)}
-                </div>
+        {/* --- TIMER (WORK OR BREAK) --- */}
+        {(mode === "RUNNING" || mode === "PAUSED" || mode === "BREAK") && (
+          <div className="text-center z-10 w-full max-w-4xl">
+            <h2 className={`font-medium tracking-wide uppercase mb-6 ${isBreakMode ? "text-blue-300" : "text-gray-400"}`}>
+                {isBreakMode 
+                   ? (breakTimeTotal === longBreak ? "Long Break • Recharge" : "Short Break • Breathe") 
+                   : task.name}
+            </h2>
+            
+            {/* THE CLOCK */}
+            <div className={`text-[140px] font-mono font-bold leading-none tabular-nums tracking-tighter drop-shadow-2xl 
+                ${isBreakMode ? "text-blue-100" : "text-white"}`}>
+              {isBreakMode 
+                  ? formatTime(breakTimeTotal - seconds) // Count DOWN for break
+                  : formatTime(seconds) // Count UP for work
+              }
+            </div>
 
-                <div className="flex items-center gap-10 mt-20 justify-center">
-                  <button onClick={handleRestart} className="p-5 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-all"><RotateCcw size={32} /></button>
-
-                  {seconds >= SESSION_DURATION ? (
-                      <button onClick={handleStop} className="px-10 py-5 rounded-full bg-green-500 text-black font-bold text-xl hover:scale-105 shadow-lg animate-bounce">
-                          FINISH SESSION
-                      </button>
-                  ) : (
-                      <button
-                        onClick={() => setMode(mode === "RUNNING" ? "PAUSED" : "RUNNING")}
-                        className="w-28 h-28 flex items-center justify-center rounded-full bg-white text-gray-900 hover:scale-105 transition-all shadow-2xl shadow-white/10"
-                      >
-                        {mode === "RUNNING" ? <Pause size={48} fill="currentColor" /> : <Play size={48} fill="currentColor" className="ml-1" />}
-                      </button>
-                  )}
-
-                  <button onClick={handleStop} className="p-5 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"><Square size={32} fill="currentColor" /></button>
-                </div>
-              </div>
-            )}
-
-            {/* --- FEEDBACK MODAL --- */}
-            {mode === "FEEDBACK" && (
-               // ... (Keep existing feedback modal code, just center it here) ...
-               <div className="bg-gray-800 p-8 rounded-3xl max-w-lg w-full shadow-2xl border border-gray-700 relative animate-in fade-in slide-in-from-bottom-10">
-                   {/* ... internal code same as before ... */}
-                   {/* Just showing structure here for brevity, paste your Feedback code here */}
-                   <h2 className="text-2xl font-bold mb-4 text-center">Session Complete</h2>
-                   {/* ... etc ... */}
-                   <div className="grid gap-3">
-                      {seconds >= SESSION_DURATION ? (
-                         <button onClick={() => handleSubmit("CONTINUE_FLOW")} className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold">Save & Continue</button>
-                      ) : (
-                         <button onClick={() => handleSubmit("STOP_FOR_NOW")} className="w-full py-4 bg-gray-700 text-white rounded-xl">Stop</button>
-                      )}
-                   </div>
-               </div>
-            )}
-
-            {/* --- BREAK PROMPT --- */}
-            {mode === "BREAK_PROMPT" && (
-                <div className="bg-gray-800 p-10 rounded-3xl max-w-md w-full shadow-2xl text-center border border-gray-700 animate-in zoom-in">
-                    <Coffee size={48} className="mx-auto text-blue-400 mb-6" />
-                    <h2 className="text-3xl font-bold mb-2">Break Time?</h2>
-                    <p className="text-gray-400 mb-8">
-                        {((currentTotalSessions - 1) % 4 === 0) 
-                          ? "Great job! Take a long 15m break." 
-                          : "Take a quick 5m breather."}
-                    </p>
-                    <div className="flex gap-4">
-                        <button onClick={handleSkipBreak} className="flex-1 py-4 bg-gray-700 text-white rounded-xl font-bold">Skip</button>
-                        <button onClick={handleStartBreak} className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-bold">Take Break</button>
-                    </div>
-                </div>
-            )}
-
-            {/* --- BREAK TIMER --- */}
-            {mode === "BREAK" && (
-                <div className="text-center w-full max-w-4xl">
-                    <h2 className="text-blue-400 font-bold tracking-widest uppercase mb-4 animate-pulse">Recharging...</h2>
-                    <div className="text-[140px] font-mono font-bold text-blue-100 drop-shadow-2xl">
-                      {formatTime(breakSeconds)}
-                    </div>
-                    <button onClick={handleSkipBreak} className="mt-12 px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-105">
-                        End Break & Start Work
+            <div className="flex items-center gap-8 mt-16 justify-center">
+              {isBreakMode ? (
+                  <button 
+                      onClick={() => handleSubmit("SKIP_BREAK")} 
+                      className="px-8 py-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-3 transition-all hover:scale-105 shadow-lg shadow-blue-900/50"
+                  >
+                      <FastForward size={24} fill="currentColor"/> Skip Break & Start Work
+                  </button>
+              ) : (
+                  <>
+                    <button onClick={handleRestart} className="p-4 rounded-full bg-gray-800 text-gray-400 hover:text-white transition-all"><RotateCcw size={28} /></button>
+                    <button
+                      onClick={() => setMode(mode === "RUNNING" ? "PAUSED" : "RUNNING")}
+                      className="w-24 h-24 flex items-center justify-center rounded-full bg-white text-gray-900 hover:scale-105 transition-all shadow-2xl shadow-white/10"
+                    >
+                      {mode === "RUNNING" ? <Pause size={40} fill="currentColor" /> : <Play size={40} fill="currentColor" className="ml-1" />}
                     </button>
-                </div>
-            )}
+                    <button onClick={handleStop} className="p-4 rounded-full bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all"><Square size={28} fill="currentColor" /></button>
+                  </>
+              )}
+            </div>
+          </div>
+        )}
 
-        </div>
+        {/* --- FEEDBACK --- */}
+        {mode === "FEEDBACK" && (
+          <div className="bg-gray-800 p-8 rounded-3xl max-w-lg w-full shadow-2xl animate-in fade-in slide-in-from-bottom-10 border border-gray-700 relative">
+            
+            <button onClick={handleResume} className="absolute top-4 left-4 text-gray-400 hover:text-white flex items-center gap-1 text-sm font-medium">
+              <ArrowLeft size={16} /> Resume
+            </button>
+
+            <h2 className="text-2xl font-bold mb-2 text-center mt-4">Session Paused</h2>
+            <p className="text-gray-400 text-center mb-6">Rate your focus level</p>
+            
+            {/* RATING */}
+            <div className="flex justify-center gap-2 mb-8">
+              {[1, 2, 3, 4, 5].map((star) => (
+                  <button key={star} onClick={() => setFocusRating(star)} className={`p-2 transition-all ${focusRating >= star ? "text-yellow-400 scale-110" : "text-gray-600 hover:text-gray-400"}`}>
+                    <Star size={36} fill={focusRating >= star ? "currentColor" : "none"} />
+                  </button>
+              ))}
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="space-y-3">
+              
+              {/* 1. START BREAK (If completed) */}
+              <button onClick={() => handleSubmit("START_BREAK")} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+                  <Coffee size={20} /> Take Break ({breakTimeTotal === longBreak ? "15m" : "5m"})
+              </button>
+
+              <div className="grid grid-cols-2 gap-3">
+                 {/* 2. DONE */}
+                 <button onClick={() => handleSubmit("DONE_TASK")} className="py-4 border border-green-600/50 text-green-400 hover:bg-green-600/10 rounded-xl font-bold flex items-center justify-center gap-2">
+                   <CheckCircle size={20} /> Finished
+                 </button>
+                 
+                 {/* 3. STOP FOR NOW */}
+                 <button onClick={() => handleSubmit("PAUSE_TASK")} className="py-4 border border-gray-600 text-gray-400 hover:bg-gray-700 rounded-xl font-medium flex items-center justify-center gap-2">
+                   <Clock size={20} /> Pause
+                 </button>
+              </div>
+
+              {/* 4. DISCARD */}
+              <button onClick={() => handleSubmit("DISCARD_SESSION")} className="w-full py-3 mt-2 text-red-400 hover:bg-red-900/10 rounded-xl font-medium flex items-center justify-center gap-2 text-sm">
+                 <Trash2 size={16} /> Discard Session & Retry Later
+              </button>
+
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
