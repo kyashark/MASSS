@@ -1,45 +1,50 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum, ForeignKey
+import enum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SAEnum, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
-import enum
 from app.core.database import Base
 
 class TaskStatus(str, enum.Enum):
-    PENDING = "PENDING"           # Simple, matching keys
-    IN_PROGRESS = "IN_PROGRESS"   # No spaces! Easier for DB.
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
-    SKIPPED = "SKIPPED"
     ARCHIVED = "ARCHIVED"
 
 class PriorityLevel(str, enum.Enum):
-    LOW = "LOW"       # Value: 1
-    MEDIUM = "MEDIUM" # Value: 2
-    HIGH = "HIGH"     # Value: 3
-    
+    LOW = "Low"
+    MEDIUM = "Medium"
+    HIGH = "High"
+
 class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=False) # Link to User
+    
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     
-    # 1. LINK TO SUBJECT (Inherits Base Difficulty & Importance)
+    # 1. LINK TO HIERARCHY
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
     module = relationship("Module", back_populates="tasks")
-    exam_id = Column(Integer, ForeignKey("exams.id"))
+    
+    # Optional: Link to an Exam (e.g., "Study for Midterm")
+    exam_id = Column(Integer, ForeignKey("exams.id"), nullable=True)
     exam = relationship("Exam", back_populates="tasks")
     
-    # 2. SCHEDULING MATH
+    # 2. SCHEDULING & PROGRESS
     estimated_pomodoros = Column(Integer, default=1) 
+    sessions_count = Column(Integer, default=0) # Actual sessions completed
     deadline = Column(DateTime, nullable=True)
     
-    # 3. USER OVERRIDES
-    priority = Column(Enum(PriorityLevel), default=PriorityLevel.MEDIUM)
-    is_fixed = Column(Boolean, default=False)
+    # 3. SETTINGS
+    priority = Column(SAEnum(PriorityLevel), default=PriorityLevel.MEDIUM)
+    is_fixed = Column(Boolean, default=False) # If True, time is rigid
     
-    # 4. LIFECYCLE (RL Data)
-    status = Column(Enum(TaskStatus), default=TaskStatus.PENDING)
+    # 4. LIFECYCLE
+    status = Column(SAEnum(TaskStatus), default=TaskStatus.PENDING)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # 5. SESSION LOGS (Pomodoro tracking)
-    sessions = relationship("PomodoroSession", back_populates="task", cascade="all, delete-orphan")
+    # 5. LOGS
+    # Link to PomodoroSession rows (actual work blocks)
+    sessions = relationship("PomodoroSession", back_populates="task")
