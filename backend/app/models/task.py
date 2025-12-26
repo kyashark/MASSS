@@ -26,6 +26,8 @@ class Task(Base):
     # 1. LINK TO SUBJECT (Inherits Base Difficulty & Importance)
     module_id = Column(Integer, ForeignKey("modules.id"), nullable=False)
     module = relationship("Module", back_populates="tasks")
+    exam_id = Column(Integer, ForeignKey("exams.id"))
+    exam = relationship("Exam", back_populates="tasks")
     
     # 2. SCHEDULING MATH
     estimated_pomodoros = Column(Integer, default=1) 
