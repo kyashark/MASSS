@@ -9,7 +9,7 @@ from app.core import base
 # 2. Import Your Module Routers
 #from app.modules.scheduling.router import router as scheduling_router
 from app.modules.test_crud.router import router as test_crud_router
-from app.routers import module_router, exam_router, task_router, session_router
+from app.routers import module_router, exam_router, task_router, session_router, profile_router
 
 # Ensure tables exist (Good for development, safer to leave it)
 base.Base.metadata.create_all(bind=engine)
@@ -42,11 +42,12 @@ app.include_router(module_router,prefix="/api")
 app.include_router(exam_router,prefix="/api")
 app.include_router(task_router,prefix="/api")
 app.include_router(session_router,prefix="/api")
+app.include_router(profile_router,prefix="/api")
 
 # --- Basic Health Check Endpoint ---
 app.include_router(
     test_crud_router, 
-    prefix="/api/test-crud", 
+    prefix="/api/test-crud",
     tags=["Test CRUD"])
 
 
