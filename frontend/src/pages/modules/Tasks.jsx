@@ -1,16 +1,9 @@
-
+// pages/modules/Tasks.jsx
 import React from "react";
-import { Plus, Calendar, CheckCircle2, Circle } from "lucide-react";
+import TaskList from "../../components/TaskList"; // Adjust path if needed
 
-
-const Tasks = () => {
-  
-
-  return (
-    <div>
-      <h1>Tasks page</h1>
-    </div>
-  );
+const Tasks = ({ module }) => {
+  return <TaskList module={module} />;
 };
 
 export default Tasks;
