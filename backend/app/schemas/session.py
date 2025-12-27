@@ -1,29 +1,34 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
+from app.models.session import SessionEndType
 
 # Base Schema
 class SessionBase(BaseModel):
     task_id: int
 
-# 1. CREATE (Start Timer)
+# 1. START (Input)
 class SessionCreate(SessionBase):
-    pass # We only need task_id to start. Start_time is automatic.
+    pass 
 
-# 2. END (Stop Timer)
+# 2. END (Input)
 class SessionEnd(BaseModel):
-    is_completed: bool
-    # User validates rating: Must be 1-5
-    focus_rating: Optional[int] = Field(None, ge=1, le=5, description="1=Distracted, 5=Deep Focus")
+    end_type: SessionEndType # COMPLETED, STOPPED, ABORTED
+    focus_rating: Optional[int] = Field(None, ge=1, le=5)
 
-# 3. RESPONSE (Read)
+    class Config:
+        use_enum_values = True
+
+# 3. RESPONSE (Output)
 class SessionResponse(SessionBase):
     id: int
+    user_id: int
     start_time: datetime
     end_time: Optional[datetime]
-    duration_minutes: Optional[float]
-    is_completed: bool
+    duration_minutes: float
+    end_type: SessionEndType
     focus_rating: Optional[int]
 
     class Config:
         from_attributes = True
+        use_enum_values = True

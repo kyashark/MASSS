@@ -1,30 +1,32 @@
-from sqlalchemy import Column, Integer, Float, DateTime, Boolean, ForeignKey, Enum
+import enum
+from sqlalchemy import Column, Integer, Float, DateTime, Boolean, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime
-import enum
 from app.core.database import Base
 
-# --- NEW ENUM FOR END TYPE ---
+# --- ENUM FOR LOGIC MATRIX ---
 class SessionEndType(str, enum.Enum):
-    COMPLETED = "COMPLETED"   # Timer hit 00:00
-    STOPPED = "STOPPED"       # User clicked Stop manually (Valid work)
-    ABORTED = "ABORTED"       # Restarted or Cancelled < 5 mins (Ignore for stats)
-    SKIPPED = "SKIPPED"       # User rejected the session entirely
+    COMPLETED = "COMPLETED"   # Timer finished (25m)
+    STOPPED = "STOPPED"       # User paused/stopped valid work (<25m)
+    ABORTED = "ABORTED"       # User discarded/reset (Trash)
+    SKIPPED = "SKIPPED"       # User skipped the session
 
 class PomodoroSession(Base):
     __tablename__ = "pomodoro_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True, nullable=False) # Link to User
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
     
     start_time = Column(DateTime, default=datetime.utcnow)
     end_time = Column(DateTime, nullable=True) 
     
-    duration_minutes = Column(Float, nullable=True) 
+    duration_minutes = Column(Float, default=0.0) 
     is_completed = Column(Boolean, default=False) 
-    focus_rating = Column(Integer, nullable=True) 
+    focus_rating = Column(Integer, nullable=True) # 1-5 Stars
 
-    # --- NEW FIELD ---
-    end_type = Column(Enum(SessionEndType), default=SessionEndType.COMPLETED)
+    # The Result of the Session
+    end_type = Column(SAEnum(SessionEndType), default=SessionEndType.COMPLETED)
     
+    # Relationships
     task = relationship("Task", back_populates="sessions")
