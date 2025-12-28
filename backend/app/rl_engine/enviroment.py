@@ -11,9 +11,9 @@ from gymnasium import spaces
 import numpy as np
 from collections import deque
 
-from rl_engine.config import RLConfig
-from rl_engine.state_builder import StateBuilder
-from rl_engine.reward import RewardEngine
+from app.rl_engine.config import RLConfig
+from app.rl_engine.state_builder import StateBuilder
+from app.rl_engine.reward import RewardEngine
 
 class StudentSchedulingEnv(gym.Env):
     def __init__(self, user_profile, task_data):

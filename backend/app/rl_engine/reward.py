@@ -6,7 +6,7 @@ The Scorekeeper. Implements your exact formula.
 """
 
 # rl_engine/reward.py
-from rl_engine.config import RLConfig
+from app.rl_engine.config import RLConfig
 
 class RewardEngine:
     def __init__(self):

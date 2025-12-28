@@ -6,7 +6,7 @@ Implements a standard Proximal Policy Optimization (PPO) algorithm.
 
 """
 from stable_baselines3 import PPO
-from rl_engine.enviroment import StudentSchedulingEnv
+from app.rl_engine.enviroment import StudentSchedulingEnv
 
 def train_agent():
     # 1. Create Dummy Data (Use your Mock DB logic here)
