@@ -16,27 +16,30 @@ class RLScheduler:
     def predict(self, user_profile, tasks):
         if not self.model_loaded: return []
 
-        # 1. Spin up a simulation for this user
         env = StudentSchedulingEnv(user_profile, tasks)
         obs, _ = env.reset()
         
         schedule = []
         done = False
         
-        # 2. Run the Episode
         while not done:
             action, _ = self.model.predict(obs, deterministic=True)
-            obs, reward, done, _, _ = env.step(action)
             
-            # 3. Decode Action
+            # Get the 'info' dictionary to see if move was valid
+            obs, reward, done, _, info = env.step(action)
+            
+            # --- FIX: CHECK VALIDITY ---
+            # If the environment said "Invalid" or "Full", don't add to list.
+            if not info.get("valid", False):
+                continue 
+
             task_idx, slot_idx = action
-            if task_idx > 0: # Not No-Op
+            if task_idx > 0: 
                 real_idx = task_idx - 1
                 if real_idx < len(tasks):
                     task = tasks[real_idx]
                     slot_name = ["Morning", "Afternoon", "Evening"][slot_idx]
                     
-                    # Handle both Dict and Object for ID/Name
                     t_id = task.get('id') if isinstance(task, dict) else task.id
                     t_name = task.get('name') if isinstance(task, dict) else task.name
 

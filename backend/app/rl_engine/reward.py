@@ -12,6 +12,14 @@ class RewardEngine:
     def __init__(self):
         self.cfg = RLConfig()
 
+    def _safe_get(self, obj, key, default=None):
+        """Helper for Dict/Object compatibility"""
+        if obj is None: return default
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        else:
+            return getattr(obj, key, default)
+
     def calculate_reward(self, task, action_result, user_focus_rating):
         """
         Args:
@@ -40,12 +48,15 @@ class RewardEngine:
 
         # B. Task Completion
         # If this session finishes the task (sessions_count >= estimated)
-        if task.get('sessions_count', 0) + 1 >= task.get('estimated_pomodoros', 1):
+        sessions = self._safe_get(task, 'sessions_count', 0)
+        estimated = self._safe_get(task, 'estimated_pomodoros', 1)
+        
+        if sessions + 1 >= estimated:
             reward += self.cfg.W_COMPLETION
 
         # C. Delay (Urgency)
-        days_due = task.get('days_until', 10)
-        if days_due < 0: # Overdue
+        days_due = self._safe_get(task, 'days_until', 10)
+        if days_due < 0:
             reward -= (self.cfg.W_DELAY * abs(days_due))
 
         # D. Abort (Negative Feedback)
@@ -53,7 +64,8 @@ class RewardEngine:
         
         # --- 3. Smart Rules (Bonus) ---
         # Momentum Bonus: If task was IN_PROGRESS, massive points for continuing it
-        status = task.get('status', 'PENDING')
+        status = self._safe_get(task, 'status', 'PENDING')
+        # Handle Enum if it comes back as an object
         if hasattr(status, 'name'): status = status.name
         
         if status == 'IN_PROGRESS':

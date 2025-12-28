@@ -24,11 +24,9 @@ class StudentSchedulingEnv(gym.Env):
         self.reward_engine = RewardEngine()
 
         self.pending_tasks = task_data
-        self.user_profile = user_profile # {'best_slot': 1, 'energy': 'LOW'}
+        self.user_profile = user_profile
 
-        # Action Space: 
-        # [Task_ID, Slot_ID]
-        # Task_ID: 0 to MAX_TASKS. (0 is reserved for NO_OP/Break)
+        # Action Space: [Task_ID, Slot_ID]
         self.action_space = spaces.MultiDiscrete([self.cfg.MAX_TASKS + 1, 3]) 
 
         # Observation Space
@@ -38,92 +36,97 @@ class StudentSchedulingEnv(gym.Env):
             dtype=np.float32
         )
 
-        # Internal State
-        self.recent_ratings = deque(maxlen=self.cfg.HISTORY_LEN) # Memory of last 5 ratings
+        self.recent_ratings = deque(maxlen=self.cfg.HISTORY_LEN)
         self.todays_capacity = {}
         self.current_step = 0
         self.max_steps = 20
 
+    def _safe_get(self, obj, key, default=None):
+        if isinstance(obj, dict): return obj.get(key, default)
+        return getattr(obj, key, default)
+
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
+        self.current_step = 0
         
-        # --- NEW LOGIC USING DB DATA ---
-        # If user has high energy in Morning (avg > 4.0), give more capacity.
-        # If user has low energy (avg < 3.0), give less capacity.
+        # 1. Track Task Usage (New!)
+        # Stores how many times we've scheduled each task ID in this episode
+        self.task_usage = {} 
         
+        # ... (Rest of your capacity/profile loading logic stays the same) ...
         user_stats = self.user_profile.get('energy_map', {})
+        morn = user_stats.get('Morning', 3.0)
+        aft = user_stats.get('Afternoon', 3.0)
+        eve = user_stats.get('Evening', 3.0)
         
-        morn_focus = user_stats.get('Morning', 3.0)
-        aft_focus = user_stats.get('Afternoon', 3.0)
-        eve_focus = user_stats.get('Evening', 3.0)
-        
-        # Helper to convert Focus (1-5) into Capacity (2-6 slots)
-        def calc_cap(focus):
-            return int(max(2, min(6, focus + 1))) 
+        def calc_cap(focus): return int(max(2, min(6, focus + 1))) 
             
-        self.todays_capacity = {
-            0: calc_cap(morn_focus), # Morning Capacity
-            1: calc_cap(aft_focus),  # Afternoon Capacity
-            2: calc_cap(eve_focus)   # Evening Capacity
-        }
+        self.todays_capacity = {0: calc_cap(morn), 1: calc_cap(aft), 2: calc_cap(eve)}
         
-        # Load real recent ratings
-        self.recent_ratings = deque(
-            self.user_profile.get('recent_ratings', []), 
-            maxlen=self.cfg.HISTORY_LEN
-        )
+        hist = self.user_profile.get('recent_ratings', [])
+        clean_hist = [float(x) for x in hist if x is not None]
+        self.recent_ratings = deque(clean_hist, maxlen=self.cfg.HISTORY_LEN)
         
         return self._get_obs(), {}
 
     def step(self, action):
-        # Unwrap Action
+        self.current_step += 1
+        
         task_idx = action[0] # 0 = No-Op
         slot_idx = action[1]
         
-        # --- 1. Handle No-Op (Break) ---
-        if task_idx == 0:
-            # Agent chose to do nothing.
-            reward = self.reward_engine.calculate_reward(None, 'NO_OP', None)
-            return self._get_obs(), reward, False, False, {}
+        terminated = False
+        if self.current_step >= self.max_steps: terminated = True
+        if sum(self.todays_capacity.values()) <= 0: terminated = True
 
-        # Adjust index because 0 was No-Op
+        # Branch A: No-Op
+        if task_idx == 0:
+            reward = self.reward_engine.calculate_reward(None, 'NO_OP', None)
+            return self._get_obs(), reward, terminated, False, {"valid": True}
+
         real_task_idx = task_idx - 1 
 
-        # --- 2. Validation ---
+        # Branch B: Invalid Index
         if real_task_idx >= len(self.pending_tasks):
-            return self._get_obs(), self.cfg.PENALTY_INVALID_ACTION, False, False, {}
+            return self._get_obs(), self.cfg.PENALTY_INVALID_ACTION, terminated, False, {"valid": False}
 
-        if self.todays_capacity[slot_idx] <= 0:
-             return self._get_obs(), self.cfg.PENALTY_OVERLOAD, False, False, {}
-
-        # --- 3. Execute ---
         task = self.pending_tasks[real_task_idx]
+
+        # --- FIX: CHECK IF TASK IS ALREADY DONE ---
+        # Get how many sessions this task needs
+        needed = self._safe_get(task, 'estimated_pomodoros', 1) - self._safe_get(task, 'sessions_count', 0)
+        # Get how many times we ALREADY scheduled it in this simulation
+        already_scheduled = self.task_usage.get(real_task_idx, 0)
+        
+        if already_scheduled >= needed:
+            # We already filled this task! Don't schedule it again.
+            # Give a massive penalty to teach AI to stop.
+            return self._get_obs(), -5.0, terminated, False, {"valid": False}
+
+        # Branch C: Full Slot
+        if self.todays_capacity[slot_idx] <= 0:
+             return self._get_obs(), self.cfg.PENALTY_OVERLOAD, terminated, False, {"valid": False}
+
+        # --- EXECUTE VALID MOVE ---
         self.todays_capacity[slot_idx] -= 1
+        self.task_usage[real_task_idx] = already_scheduled + 1 # <--- Increment usage
         
-        # Simulate User Feedback (In training, we mock this based on difficulty)
-        # E.g., If Fatigue is high (low recent ratings) and task is hard, rating drops.
+        difficulty = self._safe_get(task, 'difficulty', 1) 
         avg_focus = np.mean(self.recent_ratings) if self.recent_ratings else 5.0
-        difficulty = task.get('difficulty', 1)
         
-        # Simulation Logic:
         simulated_rating = 5.0
         if difficulty > 3 and avg_focus < 3.0:
-            simulated_rating = 2.0 # Burnout happened
+            simulated_rating = 2.0 
         
-        # Update History
         self.recent_ratings.append(simulated_rating)
 
-        # --- 4. Reward ---
         reward = self.reward_engine.calculate_reward(task, 'SUCCESS', simulated_rating)
-
-        # --- 5. Termination ---
-        self.current_step += 1
-        terminated = (self.current_step >= self.max_steps)
-        # Also terminate if day is full
+        
         if sum(self.todays_capacity.values()) <= 0:
             terminated = True
 
-        return self._get_obs(), reward, terminated, False, {}
+        # Pass "valid": True in the info dict so Predictor knows to save it
+        return self._get_obs(), reward, terminated, False, {"valid": True}
 
     def _get_obs(self):
         return self.state_builder.build_state(
