@@ -5,7 +5,6 @@ RL agent / trainer.
 Implements a standard Proximal Policy Optimization (PPO) algorithm.
 
 """
-
 from stable_baselines3 import PPO
 from rl_engine.enviroment import StudentSchedulingEnv
 
