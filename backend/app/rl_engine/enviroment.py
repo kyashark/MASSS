@@ -46,12 +46,32 @@ class StudentSchedulingEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self.current_step = 0
-        self.recent_ratings.clear()
         
-        # Simulate Daily Capacity (Morning, Afternoon, Evening)
-        # In real usage, this comes from 'heuristic._get_daily_capacity()'
-        self.todays_capacity = {0: 4, 1: 5, 2: 3} 
+        # --- NEW LOGIC USING DB DATA ---
+        # If user has high energy in Morning (avg > 4.0), give more capacity.
+        # If user has low energy (avg < 3.0), give less capacity.
+        
+        user_stats = self.user_profile.get('energy_map', {})
+        
+        morn_focus = user_stats.get('Morning', 3.0)
+        aft_focus = user_stats.get('Afternoon', 3.0)
+        eve_focus = user_stats.get('Evening', 3.0)
+        
+        # Helper to convert Focus (1-5) into Capacity (2-6 slots)
+        def calc_cap(focus):
+            return int(max(2, min(6, focus + 1))) 
+            
+        self.todays_capacity = {
+            0: calc_cap(morn_focus), # Morning Capacity
+            1: calc_cap(aft_focus),  # Afternoon Capacity
+            2: calc_cap(eve_focus)   # Evening Capacity
+        }
+        
+        # Load real recent ratings
+        self.recent_ratings = deque(
+            self.user_profile.get('recent_ratings', []), 
+            maxlen=self.cfg.HISTORY_LEN
+        )
         
         return self._get_obs(), {}
 
