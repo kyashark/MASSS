@@ -2,7 +2,7 @@
 Reward function (scorekeeper).
 
 Implements the exact reward formula used by the RL agent.
-
+The Scorekeeper. Implements your exact formula.
 """
 
 # rl_engine/reward.py

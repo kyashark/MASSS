@@ -1,5 +1,11 @@
 # rl_engine/config.py
 
+"""
+Centralized configuration for easy tweaking.
+Defines state space constraints, reward weights, and penalties.
+
+"""
+
 class RLConfig:
     # --- State Space Constraints ---
     MAX_TASKS = 50          # AI looks at top 50 pending tasks
