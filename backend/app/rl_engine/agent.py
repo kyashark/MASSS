@@ -25,7 +25,7 @@ def train_agent():
     env = StudentSchedulingEnv(dummy_profile, dummy_tasks)
     
     # 3. Create Model
-    model = PPO("MlpPolicy", env, verbose=1, learning_rate=0.0003)
+    model = PPO("MlpPolicy", env, verbose=1, learning_rate=0.0003,tensorboard_log="./rl_logs/")
     
     # 4. Train
     print("Training RL Agent...")
