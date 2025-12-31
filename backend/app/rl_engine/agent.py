@@ -5,8 +5,13 @@ RL agent / trainer.
 Implements a standard Proximal Policy Optimization (PPO) algorithm.
 
 """
+import os
+from datetime import datetime
 from stable_baselines3 import PPO
 from app.rl_engine.enviroment import StudentSchedulingEnv
+
+# Define where models live
+MODEL_DIR = "app/rl_models" # Adjust path if your structure is different
 
 def train_agent():
     # 1. Create Dummy Data (Use your Mock DB logic here)
@@ -25,9 +30,14 @@ def train_agent():
     # 4. Train
     print("Training RL Agent...")
     model.learn(total_timesteps=50000)
+
+    # 4. SAVE WITH TIMESTAMP
+    # Format: ppo_scheduler_YYYYMMDD_HHMMSS
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_path = os.path.join(MODEL_DIR, f"ppo_scheduler_{timestamp}")
     
     # 5. Save
-    model.save("ppo_scheduler_v2")
+    model.save(save_path)
     print("Model Saved!")
 
 if __name__ == "__main__":
