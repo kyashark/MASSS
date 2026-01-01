@@ -1,17 +1,42 @@
 # rl_engine/predictor.py
+import os
+import glob
 from stable_baselines3 import PPO
+from pathlib import Path
 from app.rl_engine.enviroment import StudentSchedulingEnv
 
+# --- PATH SETUP ---
+current_file = Path(__file__).resolve()
+PROJECT_ROOT = current_file.parent.parent.parent
+MODEL_DIR = PROJECT_ROOT / "rl_models"
+
 class RLScheduler:
-    def __init__(self, model_path="ppo_scheduler_v2"):
+    def __init__(self):
         self.model_loaded = False
+        self.model = None
+        self._load_latest_model()
+    
+    def _load_latest_model(self):
+        """Finds the most recently created .zip file in the models folder"""
         try:
-            # We assume the file is ppo_scheduler_v2.zip
-            self.model = PPO.load(model_path)
+            # 1. Get all .zip files
+            list_of_files = glob.glob(os.path.join(MODEL_DIR, "*.zip"))
+            
+            if not list_of_files:
+                print("⚠️ No RL models found in /models folder. Using Heuristic.")
+                return
+
+            # 2. Find the newest one
+            latest_file = max(list_of_files, key=os.path.getctime)
+            print(f"🧠 Loading latest RL Brain: {latest_file}")
+            
+            # 3. Load it
+            self.model = PPO.load(latest_file)
             self.model_loaded = True
-            print("✅ RL Model Loaded Successfully")
+            
         except Exception as e:
-            print(f"⚠️ RL Model not found: {e}. Using Heuristic Fallback.")
+            print(f"❌ Error loading model: {e}")
+            self.model_loaded = False
 
     def predict(self, user_profile, tasks):
         if not self.model_loaded: return []

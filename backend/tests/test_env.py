@@ -1,4 +1,22 @@
-# test_env.py
+"""
+
+
+This is a debug/test file to verify that your environment works.
+
+Typical workflow: before plugging your environment into PPO, you want to make sure:
+
+reset() works
+step() works
+Action space and observation shapes are correct
+Rewards are reasonable
+
+This is exactly what this file does.
+
+
+For testing/debugging your environment
+
+"""
+
 from app.rl_engine.enviroment import StudentSchedulingEnv
 
 # Dummy Data
