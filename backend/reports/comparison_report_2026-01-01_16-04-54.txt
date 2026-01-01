@@ -1,0 +1,39 @@
+Fetching Heuristic Schedule...
+Fetching RL Schedule...
+
+===============================================================================================
+                 🥤 THE PEPSI CHALLENGE: Heuristic (Baseline) vs. RL Agent (AI)                 
+===============================================================================================
+
+--- MORNING SLOT ---
+HEURISTIC                                     | RL AGENT                                     
+-----------------------------------------------------------------------------------------------
+(Empty)                                       | (Empty)                                      
+
+
+--- AFTERNOON SLOT ---
+HEURISTIC                                     | RL AGENT                                     
+-----------------------------------------------------------------------------------------------
+[LOW] Advanced Algorithms Assignment 8        | [LOW] Advanced Algorithms Assignment 8       
+[LOW] Creative Writing Assignment 11          | [LOW] Advanced Algorithms Assignment 8       
+                                              | [LOW] Advanced Algorithms Assignment 8       
+
+
+--- EVENING SLOT ---
+HEURISTIC                                     | RL AGENT                                     
+-----------------------------------------------------------------------------------------------
+[LOW] Creative Writing Assignment 23          |                                              
+[LOW] Linear Algebra Assignment 27            |                                              
+
+
+===============================================================================================
+                                     📊 STATISTICAL SUMMARY                                     
+===============================================================================================
+Metric                    | Heuristic                      | RL Agent                       | Winner
+-----------------------------------------------------------------------------------------------
+Total Tasks Scheduled     | 4                              | 3                              | -
+High Priority Count       | 0                              | 0                              | RL
+High Priority %           |    0.0%                        |    0.0%                        | RL
+-----------------------------------------------------------------------------------------------
+
+✅ Report saved to 'comparison_report.txt'
