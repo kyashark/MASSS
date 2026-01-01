@@ -8,10 +8,28 @@ Implements a standard Proximal Policy Optimization (PPO) algorithm.
 import os
 from datetime import datetime
 from stable_baselines3 import PPO
+from pathlib import Path
 from app.rl_engine.enviroment import StudentSchedulingEnv
 
 # Define where models live
-MODEL_DIR = "app/rl_models" # Adjust path if your structure is different
+# MODEL_DIR = "/rl_models" # Adjust path if your structure is different
+
+
+# --- PATH SETUP ---
+# 1. Get location of this file (backend/app/rl_engine/agent.py)
+current_file = Path(__file__).resolve()
+
+# 2. Go up 3 levels to reach 'backend'
+#    .parent (rl_engine) -> .parent (app) -> .parent (backend)
+PROJECT_ROOT = current_file.parent.parent.parent
+
+# 3. Define the sibling folder
+MODEL_DIR = PROJECT_ROOT / "rl_models"
+
+# 4. Auto-create directory if missing
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+
 
 def train_agent():
     # 1. Create Dummy Data (Use your Mock DB logic here)

@@ -2,9 +2,13 @@
 import os
 import glob
 from stable_baselines3 import PPO
+from pathlib import Path
 from app.rl_engine.enviroment import StudentSchedulingEnv
 
-MODEL_DIR = "app/rl_models"
+# --- PATH SETUP ---
+current_file = Path(__file__).resolve()
+PROJECT_ROOT = current_file.parent.parent.parent
+MODEL_DIR = PROJECT_ROOT / "rl_models"
 
 class RLScheduler:
     def __init__(self):
