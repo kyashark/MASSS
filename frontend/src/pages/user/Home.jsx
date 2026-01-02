@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 
 import ModuleCard from "../../components/ModuleBentoCard.jsx";
+import ProfileCard from "../../components/ProfileBentoCard.jsx";
+import ScheduleCard from "../../components/ScheduleCard.jsx"; 
 
 const Home = () => {
   const navigate = useNavigate();
@@ -36,6 +38,7 @@ const Home = () => {
           className="absolute top-6 right-6 text-slate-900"
           size={30}
         />
+        <ScheduleCard />
       </div>
 
       {/*  BLOCK 5: STUDY PROFILE  */}
@@ -43,12 +46,19 @@ const Home = () => {
         onClick={() => navigate("/user/study-profile")}
         className="md:col-span-2 bg-slate-900 rounded-3xl p-6 shadow-lg text-white 
            flex items-center gap-6 relative overflow-hidden group cursor-pointer
-           hover:scale-[1.01] hover:shadow-xl transition-all duration-300"
+           hover:shadow-xl transition-all duration-300"
       >
-        <ArrowUpRight
+        {/* <ArrowUpRight
           className="absolute top-6 right-6 text-white-300"
           size={30}
-        />
+        /> */}
+          <div className="flex-1 w-full">
+          {/* <div className="flex items-center gap-3 mb-6">
+            <Users size={24} className="text-white-700" />
+            <h2 className="text-xl font-semibold text-white-900">Student Profile</h2>
+          </div> */}
+          <ProfileCard />
+        </div>
       </div>
 
       {/*  BLOCK 2: POMODORO SESSION */}
