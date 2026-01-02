@@ -65,16 +65,17 @@ rl_agent/
 ```
 ## 📊 How to Test (The *Pepsi Challenge*)  
 Once the server is running, you can compare the two scheduling strategie
-**1. Get Heuristic Schedule**
+#### **1. Get Heuristic Schedule**
 ```bash
   GET /api/schedule/heuristic
 ```
-- *Result*: Strict ordering by Deadline. Efficient but rigid.
+- *Result*: Strict ordering by Deadline. Efficient but rigid
 
-**3. Get AI Schedule**
+#### **3. Get AI Schedule**
 ```bash
 GET /api/schedule/rl
 ```
 - *Result*: The AI dynamically orders tasks by priority and energy, focusing on high-value work even when deadlines are not immediate to improve long-term productivity
+
 
 
