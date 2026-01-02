@@ -1,9 +1,11 @@
-# services/analytics.py
+
 """
 Analytics service.
 
 Queries the database and constructs the context required by the RL agent.
+
 Acts as the bridge between persistence and the RL engine.
+
 """
 
 from sqlalchemy.orm import Session
