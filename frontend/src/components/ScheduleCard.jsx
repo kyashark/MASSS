@@ -226,7 +226,7 @@ const ScheduleCard = ({ navigate }) => {
                             ))}
                             {task.assigned_sessions > 5 && <span className="text-[10px] text-gray-400">+</span>}
                           <span className="text-[10px] text-slate-400 ml-1">
-                            {task.assigned_sessions}h
+                            {task.assigned_sessions} Sessions
                           </span>
                             {task.assigned_sessions > 5 && <span className="text-[10px] text-gray-400">+</span>}
                           </div>
