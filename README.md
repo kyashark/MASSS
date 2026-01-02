@@ -33,7 +33,7 @@ The system features a **Hybrid Architecture** that runs a **Greedy Heuristic** b
 
 ## 🏗️ Project Structure
 ```bash
-scheduler_project/
+rl_agent/
 ├── routers/
 │   └── schedule.py             # API endpoints for scheduling requests
 │
@@ -76,4 +76,5 @@ Once the server is running, you can compare the two scheduling strategie
 GET /api/schedule/rl
 ```
 - *Result*: The AI dynamically orders tasks by priority and energy, focusing on high-value work even when deadlines are not immediate to improve long-term productivity
+
 
