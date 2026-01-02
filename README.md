@@ -33,24 +33,47 @@ The system features a **Hybrid Architecture** that runs a **Greedy Heuristic** b
 
 ## 🏗️ Project Structure
 ```bash
-project_root/
+scheduler_project/
 ├── routers/
-│   └── schedule.py             # API endpoints handling scheduling requests
+│   └── schedule.py             # API endpoints for scheduling requests
 │
 ├── schemas/
-│   └── schedule.py             # Pydantic models for request/response validation
+│   └── schedule.py             # Data validation and Pydantic models
 │
 ├── rl_engine/
-│   ├── agent.py                # Main reinforcement learning agent logic
-│   ├── analytics.py            # Tools for logging and visualizing performance
-│   ├── config.py               # Hyperparameters and configuration settings
-│   ├── environment.py          # Simulation environment for training
-│   ├── predictor.py            # Neural network model architecture
-│   ├── reward.py               # Logic for calculating agent rewards
-│   └── state_builder.py        # Preprocesses raw data into state vectors
+│   ├── agent.py                # RL agent interaction logic
+│   ├── analytics.py            # Performance logging and metrics
+│   ├── config.py               # Hyperparameters and settings
+│   ├── environment.py          # Simulation environment definition
+│   ├── predictor.py            # Neural network architecture
+│   ├── reward.py               # Reward calculation logic
+│   └── state_builder.py        # Feature extraction and state prep
 │
-└── services/
-    ├── heuristic.py            # Fallback rule-based scheduling algorithm
-    └── scheduling.py           # Orchestrator integrating RL and heuristic methods
+├── services/
+│   ├── heuristic.py            # Rule-based baseline algorithm
+│   └── scheduling.py           # Main scheduling orchestrator
+│
+├── reports/
+│   └── report.txt              # Generated summary reports of scheduling tasks
+│
+├── scripts/
+│   └── test_comparision.py     # Script to compare RL vs. Heuristic performance
+│
+├── rl_models/                  # Directory for saving trained model weights
+└── rl_log/                     # Directory for training logs and history
+
 ```
-## 📊 How to Test (The **Pepsi Challenge*)  
+## 📊 How to Test (The *Pepsi Challenge*)  
+Once the server is running, you can compare the two scheduling strategie
+**1. Get Heuristic Schedule**
+```bash
+  GET /api/schedule/heuristic
+```
+- *Result*: Strict ordering by Deadline. Efficient but rigid.
+
+**3. Get AI Schedule**
+```bash
+GET /api/schedule/rl
+```
+- *Result*: The AI dynamically orders tasks by priority and energy, focusing on high-value work even when deadlines are not immediate to improve long-term productivity
+
