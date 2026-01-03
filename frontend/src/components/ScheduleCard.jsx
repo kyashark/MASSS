@@ -1,3 +1,4 @@
+// components/ScheduleCard.jsx
 import { useEffect, useState } from "react";
 import { 
   Calendar, 
@@ -8,29 +9,45 @@ import {
   Sunset, 
   Moon, 
   Clock,
-  Lock, // Icon for fixed tasks
+  Lock, 
   Briefcase
 } from "lucide-react";
 import { fetchHeuristicSchedule, fetchRLSchedule, fetchFixedRoutine } from "../api/scheduling";
+
+// --- 1. Import The Logic & Components ---
+import TaskMeta from "../components/TaskMeta"; 
+import TaskForm from "../components/TaskForm";
+import PomoSession from "../components/PomoSession";
+import { useTaskActions } from "../hooks/useTaskActions"; 
 
 const ScheduleCard = ({ navigate }) => {
   const [activeTab, setActiveTab] = useState("heuristic"); 
   const [schedule, setSchedule] = useState({ Morning: [], Afternoon: [], Evening: [] });
   const [loading, setLoading] = useState(false);
+  
+  // --- 2. Add State for Refreshing & Pomo Session ---
+  const [refreshKey, setRefreshKey] = useState(0); 
+  const [activeSessionTask, setActiveSessionTask] = useState(null);
+
+  // --- 3. Initialize the Hook ---
+  const { 
+    isFormOpen, 
+    editingTask, 
+    handleMenuAction, 
+    // handleToggleTask,  <-- REMOVED THIS
+    closeForm,
+    handleFormSuccess
+  } = useTaskActions(() => setRefreshKey(prev => prev + 1));
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        // 1. Fetch the AI Schedule (Heuristic or RL)
         let aiData = activeTab === "heuristic" 
           ? await fetchHeuristicSchedule() 
           : await fetchRLSchedule();
 
-        // 2. Fetch the Fixed Routine
         const routineData = await fetchFixedRoutine();
-
-        // 3. Process & Merge Data
         const mergedSchedule = mergeRoutineWithSchedule(aiData, routineData);
         setSchedule(mergedSchedule);
 
@@ -42,41 +59,31 @@ const ScheduleCard = ({ navigate }) => {
     };
 
     loadData();
-  }, [activeTab]);
+  }, [activeTab, refreshKey]);
 
-  // --- LOGIC: Filter Today's Routine & Place in Slots ---
   const mergeRoutineWithSchedule = (aiSchedule, fullRoutine) => {
-    // 1. Get Today's Day Name (e.g., "Monday")
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const todayName = days[new Date().getDay()];
-
-    // 2. Filter Routine for Today
     const todayRoutine = fullRoutine.filter(item => item.day_of_week === todayName);
 
-    // 3. Create a deep copy of the AI schedule to avoid mutation issues
     const newSchedule = {
       Morning: [...(aiSchedule.Morning || [])],
       Afternoon: [...(aiSchedule.Afternoon || [])],
       Evening: [...(aiSchedule.Evening || [])]
     };
 
-    // 4. Inject Fixed Tasks into correct buckets
     todayRoutine.forEach(task => {
-      // Parse hour (e.g., "09:00:00" -> 9)
       const startHour = parseInt(task.start_time.split(":")[0], 10);
-      
-      // Create a standardized task object
       const fixedTaskObj = {
         ...task,
-        isFixed: true, // Flag to identify for styling
+        isFixed: true, 
         task_name: task.name,
         module: "Fixed Routine",
         priority: "FIXED"
       };
 
-      // Slot Logic
       if (startHour >= 5 && startHour < 12) {
-        newSchedule.Morning.unshift(fixedTaskObj); // Add to top of list
+        newSchedule.Morning.unshift(fixedTaskObj); 
       } else if (startHour >= 12 && startHour < 17) {
         newSchedule.Afternoon.unshift(fixedTaskObj);
       } else {
@@ -87,7 +94,6 @@ const ScheduleCard = ({ navigate }) => {
     return newSchedule;
   };
 
-  // Helper: Period Icons
   const getPeriodIcon = (period) => {
     switch (period) {
       case "Morning": return <Sun size={18} className="text-amber-500" />;
@@ -97,14 +103,16 @@ const ScheduleCard = ({ navigate }) => {
     }
   };
 
-  // Helper: Format Time (09:00:00 -> 09:00)
   const formatTime = (timeStr) => {
     if (!timeStr) return "";
     return timeStr.slice(0, 5); 
   };
 
   return (
-    <div className="w-full h-full flex flex-col relative">
+    <div 
+      className="w-full h-full flex flex-col relative"
+      onClick={(e) => e.stopPropagation()} 
+    >
       {/* Header & Tabs */}
       <div className="flex items-center justify-between mb-4 z-10">
         <div className="flex items-center gap-3">
@@ -117,14 +125,11 @@ const ScheduleCard = ({ navigate }) => {
           </div>
         </div>
 
-        {/* Tab Switcher */}
         <div className="flex bg-slate-100 p-1 rounded-lg">
           <button
             onClick={(e) => { e.stopPropagation(); setActiveTab("heuristic"); }}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-              activeTab === "heuristic" 
-                ? "bg-white text-slate-800 shadow-sm" 
-                : "text-slate-500 hover:text-slate-700"
+              activeTab === "heuristic" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
             <Layers size={14} /> Heuristic
@@ -132,9 +137,7 @@ const ScheduleCard = ({ navigate }) => {
           <button
             onClick={(e) => { e.stopPropagation(); setActiveTab("rl"); }}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-              activeTab === "rl" 
-                ? "bg-white text-violet-600 shadow-sm" 
-                : "text-slate-500 hover:text-slate-700"
+              activeTab === "rl" ? "bg-white text-violet-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
           >
             <BrainCircuit size={14} /> AI Agent
@@ -142,7 +145,10 @@ const ScheduleCard = ({ navigate }) => {
         </div>
       </div>
 
-      <div onClick={() => navigate && navigate("/user/scheduling")} className="absolute top-0 right-0 p-2 cursor-pointer hover:bg-slate-50 rounded-full transition-colors">
+      <div 
+        onClick={() => navigate && navigate("/user/scheduling")} 
+        className="absolute top-0 right-0 p-2 cursor-pointer hover:bg-slate-50 rounded-full transition-colors"
+      >
         <ArrowUpRight size={24} className="text-slate-400" />
       </div>
 
@@ -159,7 +165,6 @@ const ScheduleCard = ({ navigate }) => {
 
             return (
               <div key={period} className="border-l-2 border-slate-100 pl-4 py-1">
-                {/* Period Label */}
                 <div className="flex items-center gap-2 mb-3">
                   {getPeriodIcon(period)}
                   <h3 className="text-sm font-semibold text-slate-600">{period}</h3>
@@ -168,25 +173,18 @@ const ScheduleCard = ({ navigate }) => {
                   </span>
                 </div>
 
-                {/* Task List */}
                 <div className="space-y-3">
                   {tasks.map((task, index) => {
-                    // --- CONDITIONAL RENDERING ---
-                    // Check if it is a Fixed Routine Task
+                    // Fixed Routine Logic
                     if (task.isFixed) {
                       return (
-                        <div 
-                          key={`fixed-${index}`} 
-                          className="bg-indigo-50 border border-indigo-200 p-3 rounded-xl shadow-sm flex flex-col justify-between"
-                        >
+                        <div key={`fixed-${index}`} className="bg-indigo-50 border border-indigo-200 p-3 rounded-xl shadow-sm flex flex-col justify-between">
                           <div className="flex justify-between items-start mb-1">
                             <h4 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
                               <Lock size={12} className="text-indigo-400" />
                               {task.task_name}
                             </h4>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-700 border border-indigo-300">
-                              ROUTINE
-                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-200 text-indigo-700 border border-indigo-300">ROUTINE</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-indigo-600 mt-1">
                             <Clock size={12} />
@@ -197,41 +195,21 @@ const ScheduleCard = ({ navigate }) => {
                     }
 
                     // --- STANDARD AI TASK RENDERING ---
+                    const mappedTask = {
+                        ...task,
+                        id: task.task_id, 
+                        name: task.task_name,
+                        estimated_pomodoros: task.assigned_sessions
+                    };
+
                     return (
-                      <div 
+                      <TaskMeta 
                         key={`task-${task.task_id}-${index}`} 
-                        className="bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-200 p-3 rounded-xl transition-all shadow-sm"
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="text-sm font-semibold text-slate-800 line-clamp-1" title={task.task_name}>
-                            {task.task_name}
-                          </h4>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                            task.priority === "HIGH" ? "bg-red-50 text-red-700 border-red-100" :
-                            task.priority === "MEDIUM" ? "bg-yellow-50 text-yellow-700 border-yellow-100" :
-                            "bg-green-50 text-green-700 border-green-100"
-                          }`}>
-                            {task.priority}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-slate-500 truncate max-w-[60%] flex items-center gap-1">
-                            <Briefcase size={10} />
-                            {task.module}
-                          </p>
-                          <div className="flex items-center gap-1">
-                            {Array.from({ length: Math.min(task.assigned_sessions, 5) }).map((_, i) => (
-                              <div key={i} className="w-1.5 h-3 bg-blue-400 rounded-sm"></div>
-                            ))}
-                            {task.assigned_sessions > 5 && <span className="text-[10px] text-gray-400">+</span>}
-                          <span className="text-[10px] text-slate-400 ml-1">
-                            {task.assigned_sessions} Sessions
-                          </span>
-                            {task.assigned_sessions > 5 && <span className="text-[10px] text-gray-400">+</span>}
-                          </div>
-                        </div>
-                      </div>
+                        task={mappedTask}
+                        onMenuAction={handleMenuAction}
+                        // onToggle removed from here
+                        onStartSession={(t) => setActiveSessionTask(t)}
+                      />
                     );
                   })}
                 </div>
@@ -241,11 +219,29 @@ const ScheduleCard = ({ navigate }) => {
         )}
         
         {!loading && Object.values(schedule).every(arr => arr.length === 0) && (
-             <div className="text-center text-slate-400 text-sm mt-10 italic">
-                Free day! No tasks.
-             </div>
+             <div className="text-center text-slate-400 text-sm mt-10 italic">Free day! No tasks.</div>
         )}
       </div>
+
+      {/* --- RENDER THE ACTION MODALS --- */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <TaskForm 
+          isOpen={isFormOpen}
+          onClose={closeForm}
+          onTaskCreated={handleFormSuccess}
+          taskToEdit={editingTask} 
+        />
+
+        {activeSessionTask && (
+          <PomoSession 
+            task={activeSessionTask} 
+            onClose={() => setActiveSessionTask(null)}
+            onComplete={() => setRefreshKey(prev => prev + 1)}
+            onUpdateTask={() => setRefreshKey(prev => prev + 1)}
+          />
+        )}
+      </div>
+
     </div>
   );
 };
