@@ -86,7 +86,7 @@ const SessionSidebar = ({ totalSessions, currentSessionNum, mode }) => {
           // WORK DOT (White)
           if (step.type === "WORK") {
             if (status === "ACTIVE") {
-                dotColor = "bg-white border-white animate-pulse shadow-[0_0_10px_white]";
+                dotColor = "bg-white border-white animate-pulse shadow-[0_0_10px_white] m-1.5";
                 textColor = "text-white font-bold";
             } else if (status === "COMPLETED") {
                 dotColor = "bg-green-500 border-green-500";
