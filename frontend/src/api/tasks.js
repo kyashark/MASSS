@@ -26,3 +26,7 @@ export const deleteTask = async (taskId) => {
   await axiosClient.delete(`/tasks/${taskId}`);
 };
 
+export const fetchTask = async (taskId) => {
+  const res = await axiosClient.get(`/tasks/${taskId}/`);
+  return res.data;
+};

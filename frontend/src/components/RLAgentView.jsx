@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { Sun, Sunset, Moon, Clock, Lock, BrainCircuit } from "lucide-react";
 import { fetchRLSchedule, fetchFixedRoutine } from "../api/scheduling";
+// 1. Import the fetchTask helper
+import { fetchTask } from "../api/tasks"; 
 import TaskMeta from "../components/TaskMeta";
 
 const RLAgentView = ({ refreshKey, onMenuAction, onStartSession }) => {
@@ -12,7 +14,6 @@ const RLAgentView = ({ refreshKey, onMenuAction, onStartSession }) => {
     const loadData = async () => {
       setLoading(true);
       try {
-        // Specific API Call for RL
         const aiData = await fetchRLSchedule();
         const routineData = await fetchFixedRoutine();
         const mergedSchedule = mergeRoutineWithSchedule(aiData, routineData);
@@ -26,7 +27,7 @@ const RLAgentView = ({ refreshKey, onMenuAction, onStartSession }) => {
     loadData();
   }, [refreshKey]);
 
-  // --- Independent Logic (Can be customized for RL later) ---
+  // --- Helpers ---
   const mergeRoutineWithSchedule = (aiSchedule, fullRoutine) => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const todayName = days[new Date().getDay()];
@@ -54,20 +55,26 @@ const RLAgentView = ({ refreshKey, onMenuAction, onStartSession }) => {
     return newSchedule;
   };
 
-  const handleTaskClick = (clickedTask) => {
-     // Logic to find grouped tasks specifically within the RL list
-     const allTasks = [...schedule.Morning, ...schedule.Afternoon, ...schedule.Evening];
-     const relatedTasks = allTasks.filter(t => t.task_id === clickedTask.id && !t.isFixed);
-     
-     let overrides = null;
-     if (relatedTasks.length > 1) {
-        const completedCount = relatedTasks.filter(t => t.status === "COMPLETED").length;
-        overrides = {
-          initialSessionCount: completedCount,
-          totalSessionOverride: relatedTasks.length
-        };
+  // --- 2. UPDATED CLICK HANDLER (Async Fetch) ---
+  const handleTaskClick = async (clickedTask) => {
+     try {
+       // Fetch the REAL global data (sessions_count, estimated_pomodoros)
+       const fullTaskData = await fetchTask(clickedTask.task_id);
+       
+       // Merge it: Keep the schedule time, but overwrite the counts with the global data
+       const mergedTask = {
+           ...clickedTask,
+           ...fullTaskData,
+           id: clickedTask.task_id
+       };
+
+       // Pass 'null' for overrides so PomoSession uses the merged global data
+       onStartSession(mergedTask, null);
+     } catch (error) {
+       console.error("Could not fetch task details", error);
+       // Fallback if API fails
+       onStartSession(clickedTask, null);
      }
-     onStartSession(clickedTask, overrides);
   };
 
   // --- Rendering Helpers ---
@@ -98,7 +105,6 @@ const RLAgentView = ({ refreshKey, onMenuAction, onStartSession }) => {
 
   return (
     <div className="space-y-4 pb-10">
-      {/* You can add specific RL headers or analytics here later without breaking Heuristic view */}
       {["Morning", "Afternoon", "Evening"].map((period) => {
         const tasks = schedule[period] || [];
         if (tasks.length === 0) return null;
@@ -128,13 +134,21 @@ const RLAgentView = ({ refreshKey, onMenuAction, onStartSession }) => {
                    );
                 }
                 
-                const mappedTask = { ...task, id: task.task_id, name: task.task_name, estimated_pomodoros: task.assigned_sessions };
+                // For the list view, we keep it simple (1 session block)
+                const mappedTask = { 
+                    ...task, 
+                    id: task.task_id, 
+                    name: task.task_name, 
+                    estimated_pomodoros: task.assigned_sessions 
+                };
+
                 return (
                   <TaskMeta 
                     key={`task-${task.task_id}-${index}`} 
                     task={mappedTask} 
                     onMenuAction={onMenuAction} 
-                    onStartSession={(t) => handleTaskClick(t)} 
+                    // 3. Trigger the async fetch on click
+                    onStartSession={() => handleTaskClick(mappedTask)} 
                   />
                 );
               })}

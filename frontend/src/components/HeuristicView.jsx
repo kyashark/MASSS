@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { Sun, Sunset, Moon, Clock, Lock } from "lucide-react";
 import { fetchHeuristicSchedule, fetchFixedRoutine } from "../api/scheduling";
+// 1. Import the new fetch function
+import { fetchTask } from "../api/tasks"; 
 import TaskMeta from "../components/TaskMeta";
 
 const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
@@ -12,7 +14,6 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
     const loadData = async () => {
       setLoading(true);
       try {
-        // Specific API Call for Heuristic
         const aiData = await fetchHeuristicSchedule();
         const routineData = await fetchFixedRoutine();
         const mergedSchedule = mergeRoutineWithSchedule(aiData, routineData);
@@ -26,7 +27,7 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
     loadData();
   }, [refreshKey]);
 
-  // --- Helpers (Kept independent so you can change them per file if needed) ---
+  // --- Helpers ---
   const mergeRoutineWithSchedule = (aiSchedule, fullRoutine) => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const todayName = days[new Date().getDay()];
@@ -55,22 +56,27 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
     return newSchedule;
   };
 
-  // Logic to calculate session stats before passing up to parent
-  const handleTaskClick = (clickedTask) => {
-     // Flatten current local schedule to find siblings
-     const allTasks = [...schedule.Morning, ...schedule.Afternoon, ...schedule.Evening];
-     const relatedTasks = allTasks.filter(t => t.task_id === clickedTask.id && !t.isFixed);
-     
-     let overrides = null;
-     if (relatedTasks.length > 1) {
-        const completedCount = relatedTasks.filter(t => t.status === "COMPLETED").length;
-        overrides = {
-          initialSessionCount: completedCount,
-          totalSessionOverride: relatedTasks.length
+  // --- 2. UPDATED CLICK HANDLER ---
+  const handleTaskClick = async (clickedTask) => {
+      try {
+        // Fetch the "Real" task data from the database to get the full history (sessions_count)
+        const fullTaskData = await fetchTask(clickedTask.task_id);
+        
+        // Merge the Schedule info (Time) with the Database info (History)
+        const mergedTask = {
+            ...clickedTask,          // Keeps the start_time/end_time from schedule
+            ...fullTaskData,         // Overwrites with real sessions_count & estimated_pomodoros
+            // Ensure ID match
+            id: clickedTask.task_id 
         };
-     }
-     // Pass data up to ScheduleCard
-     onStartSession(clickedTask, overrides);
+
+        // Pass null for overrides so it uses the real data we just fetched
+        onStartSession(mergedTask, null);
+      } catch (error) {
+        console.error("Could not fetch full task details", error);
+        // Fallback: Open with what we have if fetch fails
+        onStartSession(clickedTask, null);
+      }
   };
 
   // --- Rendering Helpers ---
@@ -85,7 +91,6 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
 
   const formatTime = (timeStr) => timeStr ? timeStr.slice(0, 5) : "";
 
-  // --- Main Render ---
   if (loading) {
     return <div className="h-full flex items-center justify-center text-slate-400 text-sm animate-pulse">Loading Heuristic Plan...</div>;
   }
@@ -125,13 +130,20 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
                    );
                 }
                 
-                const mappedTask = { ...task, id: task.task_id, name: task.task_name, estimated_pomodoros: task.assigned_sessions };
+                const mappedTask = { 
+                    ...task, 
+                    id: task.task_id, 
+                    name: task.task_name,
+                    estimated_pomodoros: task.assigned_sessions 
+                };
+
                 return (
                   <TaskMeta 
                     key={`task-${task.task_id}-${index}`} 
                     task={mappedTask} 
                     onMenuAction={onMenuAction} 
-                    onStartSession={(t) => handleTaskClick(t)} 
+                    // 3. Make sure we call the new async handler
+                    onStartSession={() => handleTaskClick(mappedTask)} 
                   />
                 );
               })}
