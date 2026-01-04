@@ -13,6 +13,7 @@ import Home from './pages/user/Home.jsx';
 import Modules from './pages/user/Modules.jsx';
 import Scheduling from './pages/user/Scheduling.jsx';
 import StudyProfile from './pages/user/StudyProfile.jsx';
+import Sessions from './pages/user/Sessions.jsx';
 
 
 function App() {
@@ -41,7 +42,8 @@ function App() {
           <Route path="home" element={<Home />} />
           <Route path="Modules" element={<Modules />} />
           <Route path="scheduling" element={<Scheduling />} />
-          <Route path="study-profile" element={<StudyProfile />} />  
+          <Route path="study-profile" element={<StudyProfile />} /> 
+          <Route path="sessions" element={<Sessions />} /> 
           
           {/* You can easily add more here later: */}
           {/* <Route path="profile" element={<UserProfile />} /> */}

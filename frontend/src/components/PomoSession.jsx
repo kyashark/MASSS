@@ -21,12 +21,12 @@ const PomoSession = ({
   const [loading, setLoading] = useState(false);
 
   // --- CONFIG ---
-  // const workDuration = 5;      // Debug
-  // const shortBreak = 2;        // Debug
-  // const longBreak = 4;         // Debug
-  const workDuration = 25 * 60;   
-  const shortBreak = 5 * 60;      
-  const longBreak = 10 * 60;      
+  const workDuration = 5;      // Debug
+  const shortBreak = 2;        // Debug
+  const longBreak = 4;         // Debug
+  // const workDuration = 25 * 60;   
+  // const shortBreak = 5 * 60;      
+  // const longBreak = 10 * 60;      
 
   // --- SESSION COUNT LOGIC ---
   const [completedSessions, setCompletedSessions] = useState(

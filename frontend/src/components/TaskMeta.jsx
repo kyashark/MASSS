@@ -114,7 +114,7 @@ const TaskMeta = ({ task, onMenuAction, onStartSession }) => {
           <div className="flex items-center gap-1">
              {/* --- UPDATED DISPLAY HERE --- */}
              <span className="text-[10px] text-slate-400 ml-1">
-                Sessions: {currentSessions}/{estimated_pomodoros}
+                Sessions {estimated_pomodoros}
              </span>
           </div>
         </div>

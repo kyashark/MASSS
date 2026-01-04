@@ -1,8 +1,16 @@
 import enum
 from sqlalchemy import Column, Integer, Float, DateTime, Boolean, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.core.database import Base
+
+# --- TIMEZONE HELPER ---
+def get_sl_time():
+    """
+    Returns the current time in Sri Lanka (UTC+5:30) as a naive datetime object.
+    This forces the database to store '3:30 PM' instead of '10:00 AM'.
+    """
+    return datetime.utcnow() + timedelta(hours=5, minutes=30)
 
 # --- ENUM FOR LOGIC MATRIX ---
 class SessionEndType(str, enum.Enum):
@@ -18,7 +26,8 @@ class PomodoroSession(Base):
     user_id = Column(Integer, index=True, nullable=False) # Link to User
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
     
-    start_time = Column(DateTime, default=datetime.utcnow)
+    # --- FIXED: Default to Sri Lanka time ---
+    start_time = Column(DateTime, default=get_sl_time)
     end_time = Column(DateTime, nullable=True) 
     
     duration_minutes = Column(Float, default=0.0) 

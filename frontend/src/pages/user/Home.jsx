@@ -23,6 +23,7 @@ import {
 import ModuleCard from "../../components/ModuleBentoCard.jsx";
 import ProfileCard from "../../components/ProfileBentoCard.jsx";
 import ScheduleCard from "../../components/ScheduleCard.jsx"; 
+import SessionCard from "../../components/SessionBentoCard.jsx";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -71,6 +72,16 @@ const Home = () => {
           className="absolute top-6 right-6 text-white-500"
           size={30}
         />
+        <div className="flex-1 w-full">
+          <div className="flex items-center gap-3 mb-6">
+            <Clock size={24} className="text-white-700" />
+            <h2 className="text-xl font-semibold text-white-900">Focus Sessions</h2>
+          </div>
+        <div className="rounded-xl border border-slate-800 bg-slate-800 p-4">
+  <SessionCard />
+</div>
+        </div>
+
       </div>
 
       {/*  BLOCK 3: MODULES LIST */}

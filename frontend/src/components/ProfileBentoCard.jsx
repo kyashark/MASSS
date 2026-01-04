@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Battery, Zap, AlertCircle, Loader2, Clock } from "lucide-react";
 import { fetchDashboardStats } from "../api/stats"; 
 
-const ProfileCard = () => {
+const ProfileBentoCard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  // 1. Add state for current time
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
     const loadData = async () => {
@@ -18,6 +20,14 @@ const ProfileCard = () => {
       }
     };
     loadData();
+
+    // 2. Set up the timer to update every second
+    const timer = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 1000);
+
+    // Cleanup timer on unmount
+    return () => clearInterval(timer);
   }, []);
 
   // --- Helper: Get Color for Stress Status (Dark Mode) ---
@@ -50,7 +60,7 @@ const ProfileCard = () => {
   return (
     <div className="w-full flex flex-col gap-6 p-4">
       
-      {/* --- TOP ROW: STATUS & PERIOD --- */}
+      {/* --- TOP ROW: STATUS & TIME --- */}
       <div className="flex items-start justify-between">
         
         {/* Status Badge */}
@@ -64,13 +74,17 @@ const ProfileCard = () => {
           </div>
         </div>
 
-        {/* Time Period */}
+        {/* Time & Date Display */}
         <div className="text-right">
+          {/* Using the Label slot for the Date */}
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
-            Period
+            {currentDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
           </p>
           <div className="flex items-center justify-end gap-2 text-slate-200">
-            <span className="text-lg font-medium">{stats.period}</span>
+            {/* Using the Value slot for the Time */}
+            <span className="text-lg font-medium">
+              {currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
             <Clock size={16} className="text-slate-400" />
           </div>
         </div>
@@ -102,4 +116,4 @@ const ProfileCard = () => {
   );
 };
 
-export default ProfileCard;
+export default ProfileBentoCard;
