@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Battery, Zap, AlertCircle, Loader2, Clock } from "lucide-react";
 import { fetchDashboardStats } from "../api/stats"; 
 
-const ProfileBentoCard = () => {
+const StatsBentoCard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   // 1. Add state for current time
@@ -76,9 +76,10 @@ const ProfileBentoCard = () => {
 
         {/* Time & Date Display */}
         <div className="text-right">
-          {/* Using the Label slot for the Date */}
+          {/* Using the Label slot for the Period & Date */}
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">
-            {currentDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+            {/* Added Period Here */}
+            <span className="text-slate-200 mr-2">{stats.period}</span> • <span className="ml-2">{currentDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</span>
           </p>
           <div className="flex items-center justify-end gap-2 text-slate-200">
             {/* Using the Value slot for the Time */}
@@ -116,4 +117,4 @@ const ProfileBentoCard = () => {
   );
 };
 
-export default ProfileBentoCard;
+export default StatsBentoCard;

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import ModuleCard from "../../components/ModuleBentoCard.jsx";
-import ProfileCard from "../../components/ProfileBentoCard.jsx";
+import ProfileCard from "../../components/StatsBentoCard.jsx";
 import ScheduleCard from "../../components/ScheduleCard.jsx"; 
 import SessionCard from "../../components/SessionBentoCard.jsx";
 
@@ -42,22 +42,16 @@ const Home = () => {
         <ScheduleCard />
       </div>
 
-      {/*  BLOCK 5: STUDY PROFILE  */}
+      {/*  BLOCK 5: stat  */}
       <div
-        onClick={() => navigate("/user/study-profile")}
+        onClick={() => navigate("/user/stat")}
         className="md:col-span-2 bg-slate-900 rounded-3xl p-6 shadow-lg text-white 
            flex items-center gap-6 relative overflow-hidden group cursor-pointer
            hover:shadow-xl transition-all duration-300"
       >
-        {/* <ArrowUpRight
-          className="absolute top-6 right-6 text-white-300"
-          size={30}
-        /> */}
+     
           <div className="flex-1 w-full">
-          {/* <div className="flex items-center gap-3 mb-6">
-            <Users size={24} className="text-white-700" />
-            <h2 className="text-xl font-semibold text-white-900">Student Profile</h2>
-          </div> */}
+        
           <ProfileCard />
         </div>
       </div>
@@ -101,15 +95,22 @@ const Home = () => {
         </div>
       </div>
 
-      {/*  BLOCK 4: AGENT ALERT --- */}
+      {/*  BLOCK 4: Study profile  */}
       <div
-        onClick={() => navigate("/user/agent")}
+        onClick={() => navigate("/user/study-profile")}
         className="md:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 relative hover:shadow-md transition-all"
       >
         <ArrowUpRight
           className="absolute top-6 right-6 text-slate-900"
           size={30}
         />
+         <div className="flex-1 w-full">
+          <div className="flex items-center gap-3 mb-6">
+            <Users size={24} className="text-gray-700" />
+            <h2 className="text-xl font-semibold text-gray-900">Study Profile</h2>
+          </div>
+         
+        </div>
       </div>
     </main>
   );
