@@ -9,8 +9,7 @@ import {
   Sunset, 
   Moon, 
   Clock,
-  Lock, 
-  Briefcase
+  Lock
 } from "lucide-react";
 import { fetchHeuristicSchedule, fetchRLSchedule, fetchFixedRoutine } from "../api/scheduling";
 
@@ -29,12 +28,14 @@ const ScheduleCard = ({ navigate }) => {
   const [refreshKey, setRefreshKey] = useState(0); 
   const [activeSessionTask, setActiveSessionTask] = useState(null);
 
+  // NEW: Store calculated props for the session (for RL group tasks)
+  const [sessionOverrides, setSessionOverrides] = useState(null);
+
   // --- 3. Initialize the Hook ---
   const { 
     isFormOpen, 
     editingTask, 
     handleMenuAction, 
-    // handleToggleTask,  <-- REMOVED THIS
     closeForm,
     handleFormSuccess
   } = useTaskActions(() => setRefreshKey(prev => prev + 1));
@@ -61,6 +62,7 @@ const ScheduleCard = ({ navigate }) => {
     loadData();
   }, [activeTab, refreshKey]);
 
+  // ... (mergeRoutineWithSchedule, getPeriodIcon, formatTime helpers remain same) ...
   const mergeRoutineWithSchedule = (aiSchedule, fullRoutine) => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const todayName = days[new Date().getDay()];
@@ -106,6 +108,33 @@ const ScheduleCard = ({ navigate }) => {
   const formatTime = (timeStr) => {
     if (!timeStr) return "";
     return timeStr.slice(0, 5); 
+  };
+
+  // --- 4. NEW: Logic to handle opening a session for RL Tasks ---
+  const handleStartSession = (clickedTask) => {
+    // 1. Flatten the schedule to find siblings
+    const allTasks = [...schedule.Morning, ...schedule.Afternoon, ...schedule.Evening];
+    
+    // 2. Find all instances of this task ID (this handles the RL list)
+    // Note: clickedTask.id comes from TaskMeta mapping (which is task_id)
+    const relatedTasks = allTasks.filter(t => t.task_id === clickedTask.id && !t.isFixed);
+
+    // 3. If it's a multi-entry task group (RL style)
+    if (relatedTasks.length > 1) {
+       // Calculate how many are actually DONE
+       const completedCount = relatedTasks.filter(t => t.status === "COMPLETED").length;
+       const totalCount = relatedTasks.length;
+
+       setSessionOverrides({
+          initialSessionCount: completedCount, // If 1 is done, start at 1 (which makes current = 2)
+          totalSessionOverride: totalCount
+       });
+    } else {
+       // Normal single task
+       setSessionOverrides(null);
+    }
+
+    setActiveSessionTask(clickedTask);
   };
 
   return (
@@ -207,8 +236,8 @@ const ScheduleCard = ({ navigate }) => {
                         key={`task-${task.task_id}-${index}`} 
                         task={mappedTask}
                         onMenuAction={handleMenuAction}
-                        // onToggle removed from here
-                        onStartSession={(t) => setActiveSessionTask(t)}
+                        // UPDATED: Now calls handleStartSession to calculate group logic
+                        onStartSession={(t) => handleStartSession(t)}
                       />
                     );
                   })}
@@ -235,7 +264,10 @@ const ScheduleCard = ({ navigate }) => {
         {activeSessionTask && (
           <PomoSession 
             task={activeSessionTask} 
-            onClose={() => setActiveSessionTask(null)}
+            // Pass the calculated overrides here
+            initialSessionCount={sessionOverrides?.initialSessionCount}
+            totalSessionOverride={sessionOverrides?.totalSessionOverride}
+            onClose={() => { setActiveSessionTask(null); setSessionOverrides(null); }}
             onComplete={() => setRefreshKey(prev => prev + 1)}
             onUpdateTask={() => setRefreshKey(prev => prev + 1)}
           />

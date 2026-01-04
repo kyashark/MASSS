@@ -25,3 +25,4 @@ export const updateTask = async (taskId, taskData) => {
 export const deleteTask = async (taskId) => {
   await axiosClient.delete(`/tasks/${taskId}`);
 };
+
