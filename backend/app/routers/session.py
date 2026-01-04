@@ -1,9 +1,11 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.core.database import SessionLocal
-from app.models.session import PomodoroSession, SessionEndType
+# --- IMPORT get_sl_time HERE ---
+from app.models.session import PomodoroSession, SessionEndType, get_sl_time
 from app.models.task import Task, TaskStatus
 from app.schemas import session as schemas
 from app.dependencies.auth import get_current_user # Auth Dependency
@@ -40,7 +42,8 @@ def start_session(
     new_session = PomodoroSession(
         task_id=payload.task_id,
         user_id=current_user.id,
-        start_time=datetime.utcnow(),
+        # --- FIXED: Use SL Time explicitly ---
+        start_time=get_sl_time(),
         is_completed=False
     )
     
@@ -70,7 +73,10 @@ def end_session(
         raise HTTPException(status_code=400, detail="Session already ended")
 
     # 2. Calculate Duration
-    end_time = datetime.utcnow()
+    # --- FIXED: Get current SL time ---
+    end_time = get_sl_time()
+    
+    # Calculate duration (SL Time - SL Time = Correct Duration)
     duration_seconds = (end_time - session.start_time).total_seconds()
     duration_minutes = round(duration_seconds / 60, 2)
     
@@ -105,3 +111,20 @@ def end_session(
     db.commit()
     db.refresh(session)
     return session
+
+# --- 3. GET RECENT SESSIONS ---
+@router.get("/", response_model=List[schemas.SessionResponse])
+def get_recent_sessions(
+    skip: int = 0, 
+    limit: int = 20, 
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    sessions = db.query(PomodoroSession)\
+        .filter(PomodoroSession.user_id == current_user.id)\
+        .order_by(PomodoroSession.start_time.desc())\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
+        
+    return sessions

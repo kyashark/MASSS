@@ -14,3 +14,19 @@ export const updateTaskStatus = async (taskId, status) => {
   const response = await axiosClient.patch(`/tasks/${taskId}`, { status });
   return response.data;
 };
+
+
+// ✅ FIX: Use PATCH and add the trailing slash "/"
+export const updateTask = async (taskId, taskData) => {
+  const response = await axiosClient.patch(`/tasks/${taskId}/`, taskData);
+  return response.data;
+};
+// Delete a task
+export const deleteTask = async (taskId) => {
+  await axiosClient.delete(`/tasks/${taskId}`);
+};
+
+export const fetchTask = async (taskId) => {
+  const res = await axiosClient.get(`/tasks/${taskId}/`);
+  return res.data;
+};
