@@ -54,3 +54,14 @@ class PreferenceResponse(PreferenceBase):
 
     class Config:
         from_attributes = True
+
+class RoutineUpdate(BaseModel):
+    name: Optional[str] = None
+    activity_type: Optional[ActivityType] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    # Note: We don't usually update 'day_of_week' for a single ID, 
+    # but you can add it if you want to move an event to another day.
+
+    class Config:
+        use_enum_values = True

@@ -6,8 +6,8 @@ from app.core.database import SessionLocal
 from app.models.profile import WeeklyRoutine, SlotPreference, SlotName
 from app.schemas.profile import (
     RoutineCreate, RoutineResponse, 
-    PreferenceUpdate, PreferenceResponse
-)
+    PreferenceUpdate, PreferenceResponse,RoutineUpdate 
+)   
 from app.dependencies.auth import get_current_user # Auth Dependency
 
 router = APIRouter(prefix="/profile", tags=["Student Profile"])
@@ -161,3 +161,34 @@ def set_slot_preference(
     db.commit()
     db.refresh(pref)
     return pref
+
+
+# UPDATE Event (Edit Name, Time, or Type)
+@router.put("/routine/{event_id}", response_model=RoutineResponse)
+def update_routine_event(
+    event_id: int,
+    payload: RoutineUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    event = db.query(WeeklyRoutine).filter(
+        WeeklyRoutine.id == event_id,
+        WeeklyRoutine.user_id == current_user.id
+    ).first()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+        
+    # Update fields if they are provided in the payload
+    if payload.name:
+        event.name = payload.name
+    if payload.activity_type:
+        event.activity_type = payload.activity_type
+    if payload.start_time:
+        event.start_time = payload.start_time
+    if payload.end_time:
+        event.end_time = payload.end_time
+        
+    db.commit()
+    db.refresh(event)
+    return event
