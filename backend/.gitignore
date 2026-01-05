@@ -1,3 +1,52 @@
-venv/
+
+# --- Python Essentials ---
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
 .env
+
+# --- Machine Learning Artifacts (The important part) ---
+# Ignore the actual heavy model files to keep repo light
+rl_models/
+checkpoints/
+*.pt
+*.pth
+*.onnx
+*.zip
+
+# Ignore training logs (TensorBoard, etc.)
+rl_logs/
+logs/
+tensorboard_logs/
+runs/
+
+# --- Reports and Outputs ---
+# reports/
+# *.txt
+
+# --- Data ---
+data/
+*.csv
+*.json
+
+
+# Keep sample/config files if needed, but usually ignore raw data
+!data/config.json 
+!data/sample_data.csv
+
+# --- IDEs / Editors ---
+.vscode/
+.idea/
+.DS_Store
+
+# --- Jupyter Notebooks ---
+.ipynb_checkpoints/
+
+# --- Docker ---
+build/
+dist/
+*.egg-info/
