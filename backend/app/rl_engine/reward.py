@@ -1,74 +1,78 @@
-"""
-Reward function (scorekeeper).
-
-Implements the exact reward formula used by the RL agent.
-The Scorekeeper. Implements your exact formula.
-"""
-
 # rl_engine/reward.py
 from app.rl_engine.config import RLConfig
+
 
 class RewardEngine:
     def __init__(self):
         self.cfg = RLConfig()
 
     def _safe_get(self, obj, key, default=None):
-        """Helper for Dict/Object compatibility"""
-        if obj is None: return default
+        if obj is None:
+            return default
         if isinstance(obj, dict):
             return obj.get(key, default)
-        else:
-            return getattr(obj, key, default)
+        return getattr(obj, key, default)
 
-    def calculate_reward(self, task, action_result, user_focus_rating):
+    def calculate_reward(
+        self, task, action_result, user_focus_rating, work_intensity=0.0
+    ):
         """
+        Calculates reward based on performance and academic necessity.
+
         Args:
             task: The task object.
             action_result: 'SUCCESS', 'FULL', 'INVALID', 'NO_OP'
-            user_focus_rating: The actual feedback (1-5) or None if simulated.
+            user_focus_rating: The focus level (1-5).
+            work_intensity: The 'Crunch' score (0.0 - 1.0) from analytics.
         """
         reward = 0.0
 
-        # --- 1. System Penalties ---
-        if action_result == 'INVALID':
+        # --- 1. System Penalties (Hard Constraints) ---
+        if action_result == "INVALID":
             return self.cfg.PENALTY_INVALID_ACTION
-        if action_result == 'FULL':
+        if action_result == "FULL":
             return self.cfg.PENALTY_OVERLOAD
-        if action_result == 'NO_OP':
-            # Small penalty to discourage laziness, but allowed if slots are full
-            return -0.1 
+        if action_result == "NO_OP":
+            return -0.1
 
-        # --- 2. The Core Formula ---
-        # R = (w1 * Focus) + (w2 * Completion) - (w3 * Delay) - (w4 * Abort)
-        
-        # A. Focus Rating (The "Fatigue" Feedback)
-        # In simulation, we might estimate this. In real-time, we get it from DB.
+        # --- 2. Contextual Weights (The "Coach" Logic) ---
+        # During Crunch Mode (High Intensity), we care more about completion than fatigue.
+        is_crunch = work_intensity > 0.8
+        urgency_multiplier = 1.5 if is_crunch else 1.0
+        fatigue_penalty_reduction = 0.5 if is_crunch else 1.0
+
+        # A. Focus Rating (Fatigue)
+        # If in crunch mode, we reduce the negative impact of low focus.
         rating = user_focus_rating if user_focus_rating else 3.0
-        reward += (self.cfg.W_FOCUS * rating)
+        focus_reward = self.cfg.W_FOCUS * rating
 
-        # B. Task Completion
-        # If this session finishes the task (sessions_count >= estimated)
-        sessions = self._safe_get(task, 'sessions_count', 0)
-        estimated = self._safe_get(task, 'estimated_pomodoros', 1)
-        
+        if rating < 3.0:  # Student is tired
+            reward += focus_reward * fatigue_penalty_reduction
+        else:
+            reward += focus_reward
+
+        # B. Task Completion (The "Big Win")
+        sessions = self._safe_get(task, "sessions_count", 0)
+        estimated = self._safe_get(task, "estimated_pomodoros", 1)
+
         if sessions + 1 >= estimated:
-            reward += self.cfg.W_COMPLETION
+            # Completing a task during exams is worth much more!
+            reward += self.cfg.W_COMPLETION * urgency_multiplier
 
-        # C. Delay (Urgency)
-        days_due = self._safe_get(task, 'days_until', 10)
+        # C. Delay/Urgency Penalty
+        days_due = self._safe_get(task, "days_until", 10)
         if days_due < 0:
-            reward -= (self.cfg.W_DELAY * abs(days_due))
+            reward -= self.cfg.W_DELAY * abs(days_due) * urgency_multiplier
+        elif days_due <= 1:
+            # Bonus for hitting a deadline just in time during crunch
+            reward += 5.0 * urgency_multiplier
 
-        # D. Abort (Negative Feedback)
-        # (Handled if the environment detects an 'ABORTED' end_type)
-        
-        # --- 3. Smart Rules (Bonus) ---
-        # Momentum Bonus: If task was IN_PROGRESS, massive points for continuing it
-        status = self._safe_get(task, 'status', 'PENDING')
-        # Handle Enum if it comes back as an object
-        if hasattr(status, 'name'): status = status.name
-        
-        if status == 'IN_PROGRESS':
-            reward += 5.0 # Sticky Logic Reinforcement
+        # --- 3. Momentum & Continuity ---
+        status = self._safe_get(task, "status", "PENDING")
+        if hasattr(status, "name"):
+            status = status.name
+
+        if status == "IN_PROGRESS":
+            reward += 5.0  # Encourages finishing what you started
 
         return reward
