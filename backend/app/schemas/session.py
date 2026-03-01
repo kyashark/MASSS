@@ -3,21 +3,16 @@ from datetime import datetime
 from typing import Optional
 from app.models.session import SessionEndType
 
+
 # Base Schema
 class SessionBase(BaseModel):
     task_id: int
 
+
 # 1. START (Input)
 class SessionCreate(SessionBase):
-    pass 
+    pass
 
-# 2. END (Input)
-class SessionEnd(BaseModel):
-    end_type: SessionEndType # COMPLETED, STOPPED, ABORTED
-    focus_rating: Optional[int] = Field(None, ge=1, le=5)
-
-    class Config:
-        use_enum_values = True
 
 # 3. RESPONSE (Output)
 class SessionResponse(SessionBase):
@@ -31,4 +26,17 @@ class SessionResponse(SessionBase):
 
     class Config:
         from_attributes = True
+        use_enum_values = True
+
+
+class SessionEnd(BaseModel):
+    end_type: SessionEndType  # COMPLETED, STOPPED, ABORTED
+    focus_rating: Optional[int] = Field(None, ge=1, le=5)
+
+    # --- ADD THIS TO SUPPORT THE RESEARCH LOGIC ---
+    extra_sessions: Optional[int] = Field(
+        None, ge=1, description="Manually added extra pomodoros"
+    )
+
+    class Config:
         use_enum_values = True
