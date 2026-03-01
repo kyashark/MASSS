@@ -7,22 +7,21 @@ from math import exp
 from app.models.session import PomodoroSession, SessionEndType
 from app.models.task import Task
 from app.models.module import Module
+from app.models.profile import SlotPreference  # Added to track personalization
 
 
 class UserAnalyticsService:
     """
-    Advanced analytics service using Work Intensity + Implicit Signals.
-    Addresses panel concerns: stale data, manual input, and privacy.
+    Advanced analytics service bridging User Profiles and the RL Engine.
+    Ensures that "Slot Capacities" and "Energy Signals" are dynamic.
     """
 
-    # Configuration for easy tuning
-    TIME_DECAY_RATE = 0.5  # Speed at which old data loses influence
-    LOOKBACK_DAYS = 14  # Days of history to analyze
-    RECENT_HISTORY_LIMIT = 5  # Window for fatigue tracking
+    TIME_DECAY_RATE = 0.5
+    LOOKBACK_DAYS = 14
+    RECENT_HISTORY_LIMIT = 5
 
-    # Weight distribution for final Energy Calculation
-    W_BEHAVIOR = 0.70  # Weight of implicit behavioral patterns
-    W_CONTEXT = 0.30  # Weight of real-time work intensity
+    W_BEHAVIOR = 0.70
+    W_CONTEXT = 0.30
 
     def __init__(self, db: Session, user_id: int):
         self.db = db
@@ -30,12 +29,26 @@ class UserAnalyticsService:
         self.today = datetime.now()
 
     def build_rl_context(self):
-        """Builds the comprehensive user state for the RL agent."""
+        """Builds the 555-dimension context for the RL agent."""
         work_intensity = self._calculate_work_intensity()
 
-        # Calculate available energy for the three main daily slots
+        # 1. Fetch Real Capacity from Profile (Fills Dimensions 551-553)
+        prefs = (
+            self.db.query(SlotPreference)
+            .filter(SlotPreference.user_id == self.user_id)
+            .all()
+        )
+
+        # Default fallback if profile isn't initialized
+        capacity_map = (
+            {p.slot_name: p.max_pomodoros for p in prefs}
+            if prefs
+            else {"Morning": 4, "Afternoon": 4, "Evening": 4}
+        )
+
+        # 2. Calculate Energy Scores (Fills Dimension 554)
         energy_map = {
-            slot: self._calculate_slot_energy(start, end, work_intensity)
+            slot: self._calculate_slot_energy(slot, start, end, work_intensity)
             for slot, start, end in [
                 ("Morning", 6, 12),
                 ("Afternoon", 12, 18),
@@ -44,9 +57,10 @@ class UserAnalyticsService:
         }
 
         return {
-            "work_intensity": work_intensity,  # 0.0-1.0 (Crunch level)
-            "energy_map": energy_map,  # 1.0-5.0 (Predicted capacity)
-            "recent_ratings": self._get_recent_performance_history(),
+            "work_intensity": work_intensity,  # 555th Dimension
+            "energy_map": energy_map,  # 554th Dimension
+            "capacity_map": capacity_map,  # 551-553rd Dimensions
+            "recent_ratings": self._get_recent_performance_history(),  # Sliding Window
             "category_bias": self._calculate_category_bias(),
         }
 
@@ -60,12 +74,12 @@ class UserAnalyticsService:
         density = self._calculate_workload_density()
         difficulty = self._calculate_difficulty_mix()
 
-        # Weighted blend of environmental pressure
+        # Intensity is the 555th dimension of the RL state
         intensity = (0.40 * urgency) + (0.40 * density) + (0.20 * difficulty)
         return max(0.0, min(1.0, intensity))
 
     def _calculate_deadline_urgency(self):
-        """Computes urgency based on upcoming deadlines."""
+        """Computes urgency based on weighted upcoming exams and tasks."""
         tasks = (
             self.db.query(Task)
             .filter(
@@ -94,7 +108,7 @@ class UserAnalyticsService:
                 weight = 0.1
             score += weight
 
-        return min(1.0, score / 5.0)  # Capped at 5 urgent items
+        return min(1.0, score / 5.0)
 
     def _calculate_workload_density(self):
         """Calculates the ratio of required work vs available time."""
@@ -104,19 +118,17 @@ class UserAnalyticsService:
             .scalar()
             or 0
         )
-
         remaining_hours = remaining_pomo * 0.5
-        available_hours = 40.0  # Standard look-ahead window
+        available_hours = 40.0
         return min(1.0, remaining_hours / available_hours)
 
     def _calculate_difficulty_mix(self):
-        """Averages the difficulty of all active tasks."""
+        """Averages the difficulty (1-5) across individual tasks."""
         diffs = (
             self.db.query(Task.difficulty)
             .filter(Task.user_id == self.user_id, Task.status != "COMPLETED")
             .all()
         )
-
         if not diffs:
             return 0.0
         values = [d[0] for d in diffs if d[0] is not None]
@@ -126,8 +138,8 @@ class UserAnalyticsService:
     # LAYER 2: BEHAVIORAL ENERGY (Implicit Signals)
     # ═══════════════════════════════════════════════════════════
 
-    def _calculate_slot_energy(self, start, end, intensity):
-        """Predicts energy for a specific time slot."""
+    def _calculate_slot_energy(self, slot_name, start, end, intensity):
+        """Predicts energy and updates the profile inferred score."""
         cutoff = self.today - timedelta(days=self.LOOKBACK_DAYS)
         sessions = (
             self.db.query(PomodoroSession)
@@ -139,17 +151,32 @@ class UserAnalyticsService:
             .all()
         )
 
-        # Context-based energy is the inverse of work intensity (1.0 to 5.0)
         context_energy = 5.0 - (intensity * 4.0)
 
         if not sessions:
-            return max(1.0, min(5.0, context_energy))
+            final_energy = max(1.0, min(5.0, context_energy))
+        else:
+            behavior_score = self._compute_behavioral_score(sessions)
+            final_energy = (self.W_BEHAVIOR * behavior_score) + (
+                self.W_CONTEXT * context_energy
+            )
 
-        # Implicit behavior analysis
-        behavior_score = self._compute_behavioral_score(sessions)
+        # UPDATE PROFILE: Sync the AI's opinion back to the database
+        pref = (
+            self.db.query(SlotPreference)
+            .filter(
+                SlotPreference.user_id == self.user_id,
+                SlotPreference.slot_name == slot_name,
+            )
+            .first()
+        )
 
-        # Blend Behavior (70%) with Context (30%)
-        return (self.W_BEHAVIOR * behavior_score) + (self.W_CONTEXT * context_energy)
+        if pref:
+            # Normalize 1.0-5.0 to a 0.0-1.0 score
+            pref.inferred_energy_score = (final_energy - 1.0) / 4.0
+            self.db.commit()
+
+        return final_energy
 
     def _compute_behavioral_score(self, sessions):
         """Weighted blend of 4 implicit performance signals."""
@@ -162,13 +189,12 @@ class UserAnalyticsService:
         return sum(weight * score for weight, score in signals)
 
     def _apply_time_decay(self, session, value):
-        """Applies exponential decay to a metric based on age."""
+        """Applies exponential decay to historic data."""
         age = (self.today - session.start_time).days
         weight = exp(-self.TIME_DECAY_RATE * age)
         return value * weight, weight
 
     def _signal_completion_rate(self, sessions):
-        """Decayed average of session completion."""
         num, den = 0, 0
         for s in sessions:
             val = 1.0 if s.end_type == SessionEndType.COMPLETED else 0.0
@@ -178,7 +204,6 @@ class UserAnalyticsService:
         return 1.0 + ((num / den) * 4.0) if den > 0 else 3.0
 
     def _signal_duration_quality(self, sessions):
-        """Decayed average of session duration vs 25m target."""
         num, den = 0, 0
         for s in sessions:
             if not s.duration_minutes:
@@ -190,7 +215,6 @@ class UserAnalyticsService:
         return 1.0 + ((num / den) * 4.0) if den > 0 else 3.0
 
     def _signal_session_streaks(self, sessions):
-        """Measures mental stamina via consecutive sessions."""
         if len(sessions) < 2:
             return 3.0
         sorted_s = sorted(sessions, key=lambda x: x.start_time)
@@ -209,7 +233,6 @@ class UserAnalyticsService:
         return 1.0 + (min(max_s / 5.0, 1.0) * 4.0)
 
     def _signal_explicit_ratings(self, sessions):
-        """Decayed average of manual focus ratings."""
         num, den = 0, 0
         for s in sessions:
             if s.focus_rating is None:
@@ -220,11 +243,11 @@ class UserAnalyticsService:
         return num / den if den > 0 else 3.0
 
     # ═══════════════════════════════════════════════════════════
-    # LAYER 3: RECENT PERFORMANCE HISTORY
+    # LAYER 3: RECENT PERFORMANCE HISTORY (Sliding Window of 5)
     # ═══════════════════════════════════════════════════════════
 
     def _get_recent_performance_history(self):
-        """Provides raw history for environment fatigue tracking."""
+        """Implements the Recency-Biased Behavioral Model (Sliding Window of 5)."""
         sessions = (
             self.db.query(PomodoroSession)
             .filter(PomodoroSession.user_id == self.user_id)
@@ -242,7 +265,6 @@ class UserAnalyticsService:
         return history if history else [3.0]
 
     def _infer_session_quality(self, s):
-        """Heuristic to estimate focus rating from session behavior."""
         if s.end_type == SessionEndType.COMPLETED:
             score = 4.5
         elif s.end_type == SessionEndType.STOPPED:
@@ -259,7 +281,6 @@ class UserAnalyticsService:
         return max(1.0, min(5.0, score))
 
     def _calculate_category_bias(self):
-        """Maps student success rates per subject category."""
         stats = (
             self.db.query(
                 Module.category,
@@ -277,5 +298,4 @@ class UserAnalyticsService:
             .group_by(Module.category)
             .all()
         )
-
         return {r.category: (r.wins / r.total) if r.total > 0 else 0.5 for r in stats}

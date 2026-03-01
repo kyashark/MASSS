@@ -73,27 +73,65 @@ class StateBuilder:
             )
 
             # --- B. Categorical Features (One-Hot Category) ---
-            cat_raw = self._safe_get(task, "category", "Other")
+            # cat_raw = self._safe_get(task, "category", "Other")
+            # cat_idx = self.cfg.CATEGORY_MAP.get(str(cat_raw), 4)
+            # task_matrix[i, 6 + cat_idx] = 1.0
+            # --- B. Categorical Features (One-Hot Category) ---
+
+            # Retrieve from the parent module since it's no longer directly on the task
+            cat_raw = "Other"
+            if isinstance(task, dict):
+                cat_raw = task.get("category", "Other")
+            else:
+                # Use the SQLAlchemy relationship you defined in models/task.py
+                if hasattr(task, "module") and task.module:
+                    cat_raw = getattr(task.module, "category", "Other")
+                    if hasattr(cat_raw, "name"):
+                        cat_raw = cat_raw.name  # Handle Enums
+
             cat_idx = self.cfg.CATEGORY_MAP.get(str(cat_raw), 4)
             task_matrix[i, 6 + cat_idx] = 1.0
 
         # --- C. Environmental Signals ---
+        # flat_tasks = task_matrix.flatten()
+
+        # slots = np.array(
+        #     [
+        #         capacity_map.get(0, 0) / 8.0,
+        #         capacity_map.get(1, 0) / 8.0,
+        #         capacity_map.get(2, 0) / 8.0,
+        #     ],
+        #     dtype=np.float32,
+        # )
+
+        # avg_focus = np.mean(recent_focus_ratings) if recent_focus_ratings else 5.0
+        # fatigue_signal = np.array([avg_focus / 5.0], dtype=np.float32)
+
+        # # --- D. NEW: Intensity Signal ---
+        # intensity_signal = np.array([work_intensity], dtype=np.float32)
+
+        # # FINAL CONCATENATION (Shape: 555)
+        # return np.concatenate([flat_tasks, slots, fatigue_signal, intensity_signal])
+
+        # --- C. Environmental Signals ---
         flat_tasks = task_matrix.flatten()
 
+        # FIXED: Use the actual SlotNames provided by the analytics capacity_map
         slots = np.array(
             [
-                capacity_map.get(0, 0) / 8.0,
-                capacity_map.get(1, 0) / 8.0,
-                capacity_map.get(2, 0) / 8.0,
+                capacity_map.get("Morning", 4.0) / 8.0,  # Dimension 551
+                capacity_map.get("Afternoon", 4.0) / 8.0,  # Dimension 552
+                capacity_map.get("Evening", 4.0) / 8.0,  # Dimension 553
             ],
             dtype=np.float32,
         )
 
+        # 554: Fatigue Signal (Average of the Sliding Window of 5)
         avg_focus = np.mean(recent_focus_ratings) if recent_focus_ratings else 5.0
         fatigue_signal = np.array([avg_focus / 5.0], dtype=np.float32)
 
-        # --- D. NEW: Intensity Signal ---
+        # 555: Intensity Signal (Driven by Exam Weights & Deadlines)
         intensity_signal = np.array([work_intensity], dtype=np.float32)
 
-        # FINAL CONCATENATION (Shape: 555)
+        # FINAL CONCATENATION (Total Shape: 555)
         return np.concatenate([flat_tasks, slots, fatigue_signal, intensity_signal])
