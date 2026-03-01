@@ -22,6 +22,9 @@ const categories = [
 
 const energyTimes = ["Morning", "Afternoon", "Evening"];
 
+// Defined options based on your Enum
+const examTypes = ["Final", "Midterm", "Quiz", "Assignment", "Presentation", "Other"];
+
 const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
   const [step, setStep] = useState(1); 
   
@@ -32,8 +35,9 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
   
   const [exams, setExams] = useState([]);
   const [newExamName, setNewExamName] = useState("");
-  const [newExamType, setNewExamType] = useState("");
+  const [newExamType, setNewExamType] = useState("Final"); // Default to first enum option
   const [newExamDueDate, setNewExamDueDate] = useState("");
+  const [newExamWeight, setNewExamWeight] = useState(10); 
 
   function resetForm() {
     setModuleName("");
@@ -43,8 +47,9 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
     setExams([]);
     setStep(1);
     setNewExamName("");     
-    setNewExamType("");     
+    setNewExamType("Final"); // Default to Final     
     setNewExamDueDate("");
+    setNewExamWeight(10);
   }
 
   useEffect(() => {
@@ -60,6 +65,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
           name: e.name,
           type: e.exam_type,
           dueDate: e.due_date,
+          weight: e.weight || 10,
         })) || []
       );
     } else {
@@ -78,11 +84,13 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
           name: newExamName.trim(),
           type: newExamType.trim(),
           dueDate: newExamDueDate,
+          weight: parseInt(newExamWeight) || 10,
         },
       ]);
       setNewExamName("");
-      setNewExamType("");
+      setNewExamType("Final"); // Reset to default
       setNewExamDueDate("");
+      setNewExamWeight(10);
     }
   };
 
@@ -99,7 +107,11 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
       category,
       color,
       energyTime,
-      exams, 
+      exams: exams.map(e => ({
+          ...e,
+          exam_type: e.type, 
+          due_date: e.dueDate
+      })), 
     });
 
     handleClose();
@@ -130,6 +142,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
           className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Header */}
           <div className="bg-slate-200 px-8 py-6 border-b border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-semibold text-gray-800">
@@ -146,23 +159,14 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
 
             {!initialModule && (
               <div className="flex items-center gap-4">
-                <div
-                  className={`h-2 flex-1 rounded-full ${
-                    step >= 1 ? "bg-slate-800" : "bg-gray-300"
-                  }`}
-                />
-                <div
-                  className={`h-2 flex-1 rounded-full ${
-                    step >= 2 ? "bg-slate-800" : "bg-gray-300"
-                  }`}
-                />
+                <div className={`h-2 flex-1 rounded-full ${step >= 1 ? "bg-slate-800" : "bg-gray-300"}`} />
+                <div className={`h-2 flex-1 rounded-full ${step >= 2 ? "bg-slate-800" : "bg-gray-300"}`} />
               </div>
             )}
             
             {!initialModule && (
                 <p className="text-sm text-gray-700 mt-2">
-                Step {step}:{" "}
-                {step === 1 ? "Module Details" : "Exams & Assignments"}
+                Step {step}: {step === 1 ? "Module Details" : "Exams & Assignments"}
                 </p>
             )}
           </div>
@@ -172,9 +176,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10">
                 <div className="space-y-7">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Module Name
-                    </label>
+                    <label className="text-sm font-medium text-gray-700">Module Name</label>
                     <input
                       type="text"
                       value={moduleName}
@@ -185,9 +187,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Category
-                    </label>
+                    <label className="text-sm font-medium text-gray-700">Category</label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
@@ -195,26 +195,20 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                     >
                       <option value="">Select category</option>
                       {categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
+                        <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Best Time to Study
-                    </label>
+                    <label className="text-sm font-medium text-gray-700">Best Time to Study</label>
                     <select
                       value={energyTime}
                       onChange={(e) => setEnergyTime(e.target.value)}
                       className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                     >
                       {energyTimes.map((time) => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
+                        <option key={time} value={time}>{time}</option>
                       ))}
                     </select>
                   </div>
@@ -222,19 +216,13 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
 
                 <div className="space-y-7">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Color Theme
-                    </label>
+                    <label className="text-sm font-medium text-gray-700">Color Theme</label>
                     <div className="mt-3 grid grid-cols-4 gap-3">
                       {pastelColors.map((c) => (
                         <button
                           key={c.value}
                           onClick={() => setColor(c.value)}
-                          className={`h-8 rounded-md transition-all ${
-                            color === c.value
-                              ? "ring-4 ring-gray-200 ring-offset-2"
-                              : "hover:scale-110"
-                          }`}
+                          className={`h-8 rounded-md transition-all ${color === c.value ? "ring-4 ring-gray-200 ring-offset-2" : "hover:scale-110"}`}
                           style={{ backgroundColor: c.value }}
                           title={c.name}
                         />
@@ -245,34 +233,44 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
               </div>
             ) : (
               <div className="max-w-full mx-auto">
-                <h3 className="text-xl font-semibold text-gray-800 mb-8">
-                  Add Exams & Assignments
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h3 className="text-xl font-semibold text-gray-800 mb-8">Add Exams & Assignments</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <input
                     type="text"
-                    placeholder="Exam/Assignment Name"
+                    placeholder="Name"
                     value={newExamName}
                     onChange={(e) => setNewExamName(e.target.value)}
                     className="px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                   />
-                  <input
-                    type="text"
-                    placeholder="Type (e.g., Final, Quiz)"
+                  
+                  {/* Changed from Input to Select Dropdown */}
+                  <select
                     value={newExamType}
                     onChange={(e) => setNewExamType(e.target.value)}
                     className="px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
+                  >
+                    {examTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="date"
+                    value={newExamDueDate}
+                    onChange={(e) => setNewExamDueDate(e.target.value)}
+                    className="px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                   />
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <input
-                      type="date"
-                      value={newExamDueDate}
-                      onChange={(e) => setNewExamDueDate(e.target.value)}
-                      className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
+                      type="number"
+                      placeholder="Wgt %"
+                      value={newExamWeight}
+                      onChange={(e) => setNewExamWeight(e.target.value)}
+                      className="w-20 px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                     />
                     <button
                       onClick={addExam}
-                      className="px-6 py-2 bg-slate-700 hover:bg-slate-900 text-white font-medium rounded-md transition shadow-md flex items-center justify-center"
+                      className="flex-1 bg-slate-700 hover:bg-slate-900 text-white font-medium rounded-md transition shadow-md"
                     >
                       Add
                     </button>
@@ -291,11 +289,11 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                         className="bg-white py-3 px-5 rounded-md shadow-sm border border-gray-100 flex justify-between items-center mb-3"
                       >
                         <div>
-                          <span className="font-semibold text-gray-800">
-                            {exam.name}
-                          </span>
+                          <span className="font-semibold text-gray-800">{exam.name}</span>
                           <span className="text-gray-500 mx-3">•</span>
                           <span className="text-gray-600">{exam.type}</span>
+                          <span className="text-gray-500 mx-3">•</span>
+                          <span className="text-gray-600 font-medium">Wgt: {exam.weight}%</span>
                         </div>
                         <span
                           onClick={() => removeExam(exam.id)}
