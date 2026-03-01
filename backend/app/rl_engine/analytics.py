@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func, case, and_
+from sqlalchemy import func, case
 from datetime import datetime, timedelta
-import numpy as np
+
+# import numpy as np
 from math import exp
 
 from app.models.session import PomodoroSession, SessionEndType
