@@ -19,54 +19,41 @@ const categories = [
   "Creative Design",
   "Memorization",
 ];
-const priorities = ["Low", "Medium", "High"];
+
 const energyTimes = ["Morning", "Afternoon", "Evening"];
 
 const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
-  const [step, setStep] = useState(1); // 1 = basics, 2 = exams
+  const [step, setStep] = useState(1); 
   
   const [moduleName, setModuleName] = useState("");
   const [category, setCategory] = useState("");
   const [color, setColor] = useState(pastelColors[0].value);
-  const [priority, setPriority] = useState("Medium");
-  const [difficulty, setDifficulty] = useState(3);
   const [energyTime, setEnergyTime] = useState("Morning");
   
-  // We keep exams in state so they are preserved during update, 
-  // even if we don't show the exam step.
   const [exams, setExams] = useState([]);
-
   const [newExamName, setNewExamName] = useState("");
   const [newExamType, setNewExamType] = useState("");
   const [newExamDueDate, setNewExamDueDate] = useState("");
 
-  // Ensure resetForm is initialized before any early returns or effects use it
   function resetForm() {
     setModuleName("");
     setCategory("");
     setColor(pastelColors[0].value);
-    setPriority("Medium");
-    setDifficulty(3);
     setEnergyTime("Morning");
     setExams([]);
     setStep(1);
-
     setNewExamName("");     
     setNewExamType("");     
     setNewExamDueDate("");
   }
 
-  // Populate form when editing
   useEffect(() => {
     if (initialModule) {
       setModuleName(initialModule.name || "");
       setCategory(initialModule.category || "");
       setColor(initialModule.color || pastelColors[0].value);
-      setPriority(initialModule.priority || "Medium");
-      setDifficulty(initialModule.difficulty || 3);
       setEnergyTime(initialModule.energy_time || "Morning");
       
-      // Load existing exams so they aren't lost during update
       setExams(
         initialModule.exams?.map((e) => ({
           id: e.id,
@@ -76,7 +63,6 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
         })) || []
       );
     } else {
-        // Reset if adding new
         resetForm();
     }
   }, [initialModule]);
@@ -112,10 +98,8 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
       name: moduleName.trim(),
       category,
       color,
-      priority,
-      difficulty,
       energyTime,
-      exams, // Sends existing exams back to backend
+      exams, 
     });
 
     handleClose();
@@ -136,22 +120,18 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
 
   return (
     <>
-      {/* Blurred backdrop */}
       <div
         className="fixed inset-0 bg-white/10 backdrop-blur-lg z-40"
         onClick={handleClose}
       />
 
-      {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
           <div className="bg-slate-200 px-8 py-6 border-b border-gray-100">
             <div className="flex justify-between items-center mb-4">
-              {/* ✅ CHANGE 1: Dynamic Title */}
               <h2 className="text-2xl font-semibold text-gray-800">
                 {initialModule ? "Update Module" : "Add New Module"}
               </h2>
@@ -164,7 +144,6 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
               </button>
             </div>
 
-            {/* ✅ CHANGE 2: Hide Step Indicator if in Edit Mode */}
             {!initialModule && (
               <div className="flex items-center gap-4">
                 <div
@@ -180,7 +159,6 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
               </div>
             )}
             
-            {/* Step Indicator Text (Only show in Create Mode) */}
             {!initialModule && (
                 <p className="text-sm text-gray-700 mt-2">
                 Step {step}:{" "}
@@ -189,12 +167,9 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
             )}
           </div>
 
-          {/* Content - Scrollable */}
           <div className="flex-1 overflow-y-auto p-8">
             {step === 1 ? (
-              /* PAGE 1: Module Basics */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-10">
-                {/* Column 1 */}
                 <div className="space-y-7">
                   <div>
                     <label className="text-sm font-medium text-gray-700">
@@ -226,6 +201,26 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                       ))}
                     </select>
                   </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">
+                      Best Time to Study
+                    </label>
+                    <select
+                      value={energyTime}
+                      onChange={(e) => setEnergyTime(e.target.value)}
+                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
+                    >
+                      {energyTimes.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-7">
                   <div>
                     <label className="text-sm font-medium text-gray-700">
                       Color Theme
@@ -247,78 +242,12 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                     </div>
                   </div>
                 </div>
-
-                {/* Column 2 */}
-                <div className="space-y-7">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Priority
-                    </label>
-                    <select
-                      value={priority}
-                      onChange={(e) => setPriority(e.target.value)}
-                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
-                    >
-                      {priorities.map((p) => (
-                        <option key={p} value={p}>
-                          {p}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mt-5">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Module Difficulty
-                      </label>
-                      {difficulty > 0 && (
-                        <div className="mt-1 text-sm text-gray-700 tracking-widest">
-                          Level {difficulty}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex space-x-2 mt-5 mb-10">
-                      {[1, 2, 3, 4, 5].map((level) => (
-                        <div
-                          key={level}
-                          onClick={() => setDifficulty(level)}
-                          className={`flex-1 h-5 cursor-pointer rounded transition-all duration-300 ${
-                            difficulty >= level
-                              ? "bg-slate-700"
-                              : "bg-slate-300"
-                          }`}
-                        ></div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Best Time to Study
-                    </label>
-                    <select
-                      value={energyTime}
-                      onChange={(e) => setEnergyTime(e.target.value)}
-                      className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
-                    >
-                      {energyTimes.map((time) => (
-                        <option key={time} value={time}>
-                          {time}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
               </div>
             ) : (
-              /* PAGE 2: Exams & Assignments (Only accessed in Create Mode) */
               <div className="max-w-full mx-auto">
                 <h3 className="text-xl font-semibold text-gray-800 mb-8">
                   Add Exams & Assignments
                 </h3>
-                {/* ... Exam Form Inputs ... */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <input
                     type="text"
@@ -382,7 +311,6 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
             )}
           </div>
 
-          {/* Footer Buttons */}
           <div className="bg-gray-50 px-8 py-6 border-t border-gray-100 flex justify-between">
             <button
               onClick={step === 1 ? handleClose : prevStep}
@@ -392,9 +320,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
             </button>
 
             <div className="flex gap-4">
-              {/* ✅ CHANGE 3: Logic to skip Step 2 on Edit */}
               {initialModule ? (
-                // EDIT MODE: Single step Update
                 <button
                   onClick={handleSubmit}
                   disabled={!moduleName.trim() || !category}
@@ -403,7 +329,6 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                   Update Module
                 </button>
               ) : (
-                // CREATE MODE: Normal 2-Step Flow
                 <>
                     {step === 1 ? (
                         <button
