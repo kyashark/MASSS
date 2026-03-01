@@ -1,7 +1,7 @@
 // components/TaskForm.jsx
 import React, { useState, useEffect } from "react";
-import { X, Calendar, Clock, BookOpen } from "lucide-react";
-import { createTask, updateTask } from "../api/tasks"; // Import updateTask
+import { X, Calendar, Clock, BookOpen, BarChart } from "lucide-react"; // Added BarChart icon
+import { createTask, updateTask } from "../api/tasks"; 
 import { fetchExamsByModule } from "../api/exams";
 
 const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
@@ -13,6 +13,7 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
     description: "",
     estimated_pomodoros: 1,
     priority: "Medium",
+    difficulty: 3, // Default to 3
     deadline: "",
     is_fixed: false,
     exam_id: "",
@@ -21,30 +22,28 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
   // 1. Fetch Exams & Populate Form for Editing
   useEffect(() => {
     if (isOpen) {
-      // Load Exams
       if (moduleId) {
         fetchExamsByModule(moduleId).then(setExams).catch(console.error);
       }
 
-      // If Editing: Pre-fill data
       if (taskToEdit) {
         setFormData({
           name: taskToEdit.name || "",
           description: taskToEdit.description || "",
           estimated_pomodoros: taskToEdit.estimated_pomodoros || 1,
           priority: taskToEdit.priority || "Medium",
-          // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+          difficulty: taskToEdit.difficulty || 3, // Populate difficulty
           deadline: taskToEdit.deadline ? new Date(taskToEdit.deadline).toISOString().slice(0, 16) : "",
           is_fixed: taskToEdit.is_fixed || false,
           exam_id: taskToEdit.exam_id || "",
         });
       } else {
-        // If Adding: Reset form
         setFormData({
           name: "",
           description: "",
           estimated_pomodoros: 1,
           priority: "Medium",
+          difficulty: 3, // Reset to 3
           deadline: "",
           is_fixed: false,
           exam_id: "",
@@ -68,14 +67,13 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
       };
 
       let result;
-      // 2. Decide: Create or Update?
       if (taskToEdit) {
         result = await updateTask(taskToEdit.id, payload);
       } else {
         result = await createTask(payload);
       }
 
-      onTaskCreated(result); // Pass result back
+      onTaskCreated(result);
       onClose();
     } catch (err) {
       console.error("Failed to save task", err);
@@ -138,6 +136,29 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Difficulty Selection */}
+          <div>
+            <div className="flex justify-between items-center">
+              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <BarChart size={14} /> Difficulty
+              </label>
+              <span className="text-xs font-semibold text-gray-500">Level {formData.difficulty}</span>
+            </div>
+            <div className="flex space-x-1.5 mt-1">
+              {[1, 2, 3, 4, 5].map((level) => (
+                <div
+                  key={level}
+                  onClick={() => setFormData({ ...formData, difficulty: level })}
+                  className={`flex-1 h-3 cursor-pointer rounded-full transition-all duration-200 ${
+                    formData.difficulty >= level
+                      ? "bg-slate-700"
+                      : "bg-gray-200"
+                  }`}
+                ></div>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
