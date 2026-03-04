@@ -293,8 +293,9 @@ class UserAnalyticsService:
                     )
                 ).label("wins"),
             )
-            .join(Task)
-            .join(Module)
+            .select_from(PomodoroSession)  # 🔥 Explicit starting table
+            .join(Task, PomodoroSession.task_id == Task.id)
+            .join(Module, Task.module_id == Module.id)
             .filter(PomodoroSession.user_id == self.user_id)
             .group_by(Module.category)
             .all()

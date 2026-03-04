@@ -47,11 +47,12 @@ class PomodoroSession(Base):
     focus_rating = Column(Integer, nullable=True)  # 1-5 Stars
 
     # The Result of the Session
+    # end_type = Column(SAEnum(SessionEndType), nullable=True)
     end_type = Column(SAEnum(SessionEndType), default=SessionEndType.COMPLETED)
 
     # Add a column to track which 'slot' this happened in for easier Analytics
     # This helps the RL engine map the session to Morning/Afternoon/Evening
-    slot_type = Column(String, nullable=True)
+    slot_type = Column(String, nullable=False)
 
     # Relationships
     task = relationship("Task", back_populates="sessions")

@@ -4,16 +4,17 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.core.database import SessionLocal
-
-# --- IMPORT get_sl_time HERE ---
 from app.models.session import PomodoroSession, SessionEndType, get_sl_time
 from app.models.task import Task, TaskStatus
 from app.schemas import session as schemas
-from app.dependencies.auth import get_current_user  # Auth Dependency
+from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/sessions", tags=["Pomodoro Sessions"])
 
 
+# -----------------------------
+# DB Dependency
+# -----------------------------
 def get_db():
     db = SessionLocal()
     try:
@@ -22,7 +23,21 @@ def get_db():
         db.close()
 
 
-# --- 1. START SESSION ---
+# -----------------------------
+# Helper: Auto Slot Detection
+# -----------------------------
+def get_slot_name(current_time: datetime) -> str:
+    hour = current_time.hour
+    if 6 <= hour < 12:
+        return "Morning"
+    if 12 <= hour < 18:
+        return "Afternoon"
+    return "Evening"
+
+
+# =====================================================
+# 1️⃣ START SESSION
+# =====================================================
 @router.post(
     "/start",
     response_model=schemas.SessionResponse,
@@ -44,14 +59,17 @@ def start_session(
         raise HTTPException(status_code=404, detail="Task not found")
 
     # 2. Sticky Logic: Mark Task as IN_PROGRESS immediately
-    task.status = TaskStatus.IN_PROGRESS
+    if task.status == TaskStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="Task already completed")
 
     # 3. Create Session Log
+    now = get_sl_time()
+
     new_session = PomodoroSession(
         task_id=payload.task_id,
         user_id=current_user.id,
-        # --- FIXED: Use SL Time explicitly ---
-        start_time=get_sl_time(),
+        start_time=now,
+        slot_type=get_slot_name(now),
         is_completed=False,
     )
 
@@ -61,12 +79,13 @@ def start_session(
     return new_session
 
 
-# --- 2. END SESSION (The Logic Engine) ---
+# =====================================================
+# 2️⃣ END SESSION (Logic Engine)
+# =====================================================
 @router.post("/{session_id}/end", response_model=schemas.SessionResponse)
 def end_session(
     session_id: int,
     payload: schemas.SessionEnd,
-    # Add an optional field to the schema for 'add_sessions'
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
@@ -86,11 +105,8 @@ def end_session(
         raise HTTPException(status_code=400, detail="Session already ended")
 
     # 2. Calculate Duration
-    # --- FIXED: Get current SL time ---
     end_time = get_sl_time()
-
-    # Calculate duration (SL Time - SL Time = Correct Duration)
-    duration_seconds = (end_time - session.start_time).total_seconds()
+    duration_seconds = max(0, (end_time - session.start_time).total_seconds())
     duration_minutes = round(duration_seconds / 60, 2)
 
     # 3. Update Session Data
@@ -99,28 +115,30 @@ def end_session(
     session.end_type = payload.end_type
     session.focus_rating = payload.focus_rating
 
-    if payload.end_type == SessionEndType.COMPLETED:
-        session.is_completed = True
-
-    # --- 4. MOMENTUM & TASK UPDATE (Combined) ---
+    # 4. Task Logic (Momentum + Workload Update)
     task = session.task
 
-    # A. Handle Session Completion (Success)
+    # ---- SUCCESS CASE (Timer Finished) ----
     if payload.end_type == SessionEndType.COMPLETED:
+        session.is_completed = True
         task.sessions_count += 1
 
-        # NEW RESEARCH ADDITION: If user says "I need 2 more sessions for this"
-        if hasattr(payload, "extra_sessions") and payload.extra_sessions:
-            task.estimated_pomodoros += payload.extra_sessions
+        # --- MAJOR UPDATE: AUTO-ADJUST ESTIMATE ---
+        # If the student is continuing work (sessions_count > estimate),
+        # we automatically increase the estimate so the task stays active.
+        if task.sessions_count > task.estimated_pomodoros:
+            task.estimated_pomodoros = task.sessions_count
 
-    # B. Handle Failure (The Momentum Rule)
+        # Auto-complete task only if goal reached (or handled manually via separate status update)
+        if task.sessions_count >= task.estimated_pomodoros:
+            # You can decide if you want to auto-complete or wait for 'Task Done' button
+            # To allow "Continue" to work, we keep it as IN_PROGRESS until a manual finish
+            pass
+
+    # ---- ABORTED CASE (Discarded) ----
     elif payload.end_type == SessionEndType.ABORTED:
         if task.sessions_count == 0:
-            # If it was their first try and they quit, reset to PENDING
             task.status = TaskStatus.PENDING
-        else:
-            # If they worked on it before, keep it IN_PROGRESS (Sticky)
-            pass
 
     # Note: If STOPPED, task remains IN_PROGRESS automatically.
 
@@ -130,7 +148,9 @@ def end_session(
     return session
 
 
-# --- 3. GET RECENT SESSIONS ---
+# =====================================================
+# 3️⃣ GET RECENT SESSIONS
+# =====================================================
 @router.get("/", response_model=List[schemas.SessionResponse])
 def get_recent_sessions(
     skip: int = 0,

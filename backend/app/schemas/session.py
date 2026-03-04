@@ -21,8 +21,11 @@ class SessionResponse(SessionBase):
     start_time: datetime
     end_time: Optional[datetime]
     duration_minutes: float
-    end_type: SessionEndType
+    # end_type: SessionEndType
+    end_type: Optional[SessionEndType]
     focus_rating: Optional[int]
+    # slot_type: str
+    slot_type: Optional[str]
 
     class Config:
         from_attributes = True
@@ -32,11 +35,6 @@ class SessionResponse(SessionBase):
 class SessionEnd(BaseModel):
     end_type: SessionEndType  # COMPLETED, STOPPED, ABORTED
     focus_rating: Optional[int] = Field(None, ge=1, le=5)
-
-    # --- ADD THIS TO SUPPORT THE RESEARCH LOGIC ---
-    extra_sessions: Optional[int] = Field(
-        None, ge=1, description="Manually added extra pomodoros"
-    )
 
     class Config:
         use_enum_values = True
