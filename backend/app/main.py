@@ -17,7 +17,8 @@ from app.routers import (
     profile_router,
     schedule_router,
 )
-from app.routers.rl_state import router as rl_router
+from app.routers.rl_state import router as rl_state_router
+from app.routers.rl_action import router as rl_action_router
 
 
 # Ensure tables exist (Good for development, safer to leave it)
@@ -54,7 +55,10 @@ app.include_router(session_router, prefix="/api")
 app.include_router(profile_router, prefix="/api")
 
 app.include_router(schedule_router, prefix="/api")
-app.include_router(rl_router, prefix="/api")
+
+
+app.include_router(rl_state_router, prefix="/api")
+app.include_router(rl_action_router, prefix="/api")
 
 # --- Basic Health Check Endpoint ---
 app.include_router(test_crud_router, prefix="/api/test-crud", tags=["Test CRUD"])

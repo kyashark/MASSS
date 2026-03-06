@@ -14,7 +14,7 @@ from app.rl_engine.analytics import UserAnalyticsService
 from sqlalchemy.orm import Session
 
 
-class RLDashboardService:
+class RLStateService:
     SLOT_HOURS = {
         "Morning": (6, 12),
         "Afternoon": (12, 18),

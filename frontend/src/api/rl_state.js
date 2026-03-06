@@ -33,3 +33,10 @@ export const fetchStateVector = (activeSlot = "Morning") => {
     params: { active_slot: activeSlot },
   });
 };
+
+
+export const fetchActionDistribution = (activeSlot = "Morning", userId = 1) => {
+  return axiosClient.get(`/rl/action-distribution/${userId}`, {
+    params: { active_slot: activeSlot },
+  });
+};

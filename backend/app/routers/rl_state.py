@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from typing import Literal
 
 from app.core.database import get_db
-from app.services.rl_dashboard_service import RLDashboardService
+from app.services.rl_state_service import RLStateService
 
 router = APIRouter(prefix="/rl", tags=["RL State"])
 SlotName = Literal["Morning", "Afternoon", "Evening"]
@@ -34,5 +34,5 @@ def get_state_vector(
     All 3 slot values are included in slot_fatigue{} so the frontend
     can switch slots without an extra API call.
     """
-    svc = RLDashboardService(db, user_id)
+    svc = RLStateService(db, user_id)
     return svc.get_state_vector(active_slot=active_slot)
