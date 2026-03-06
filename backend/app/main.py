@@ -7,11 +7,17 @@ from app.core.database import engine
 from app.core import base
 
 # 2. Import Your Module Routers
-#from app.modules.scheduling.router import router as scheduling_router
+# from app.modules.scheduling.router import router as scheduling_router
 from app.modules.test_crud.router import router as test_crud_router
-from app.routers import module_router, exam_router, task_router, session_router, profile_router, schedule_router
-from app.routers.dashboard import router as dashboard_router
-
+from app.routers import (
+    module_router,
+    exam_router,
+    task_router,
+    session_router,
+    profile_router,
+    schedule_router,
+)
+from app.routers.rl_state import router as rl_router
 
 
 # Ensure tables exist (Good for development, safer to leave it)
@@ -27,7 +33,7 @@ origins = [
 # --- CORS Configuration (Frontend Access) ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, 
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,30 +42,28 @@ app.add_middleware(
 # --- Register Routers ---
 # This makes your Scheduling API accessible at /api/scheduling/...
 # app.include_router(
-#     scheduling_router, 
-#     prefix="/api/scheduling", 
+#     scheduling_router,
+#     prefix="/api/scheduling",
 #     tags=["Scheduling"]
 # )
 
-app.include_router(module_router,prefix="/api")
-app.include_router(exam_router,prefix="/api")
-app.include_router(task_router,prefix="/api")
-app.include_router(session_router,prefix="/api")
-app.include_router(profile_router,prefix="/api")
+app.include_router(module_router, prefix="/api")
+app.include_router(exam_router, prefix="/api")
+app.include_router(task_router, prefix="/api")
+app.include_router(session_router, prefix="/api")
+app.include_router(profile_router, prefix="/api")
 
-app.include_router(schedule_router,prefix="/api")
-app.include_router(dashboard_router,prefix="/api")
+app.include_router(schedule_router, prefix="/api")
+app.include_router(rl_router, prefix="/api")
 
 # --- Basic Health Check Endpoint ---
-app.include_router(
-    test_crud_router, 
-    prefix="/api/test-crud",
-    tags=["Test CRUD"])
+app.include_router(test_crud_router, prefix="/api/test-crud", tags=["Test CRUD"])
 
 
 @app.get("/")
 def home():
     return {"message": "Hello Shark, Smart Scheduler AI is Online! 🦈"}
+
 
 @app.get("/test-db")
 def test_db_connection():

@@ -301,3 +301,89 @@ class UserAnalyticsService:
             .all()
         )
         return {r.category: (r.wins / r.total) if r.total > 0 else 0.5 for r in stats}
+
+    def _calculate_slot_cognitive_fatigue(
+        self, slot_name: str, start: int, end: int
+    ) -> float:
+        """
+        dim_554 — Per-slot time-decayed cognitive fatigue.
+
+        Filters ONLY sessions from this slot's hour window (e.g. 6–12 for Morning).
+        Falls back to global fatigue if no slot-specific data exists yet (cold start).
+
+        Formula:
+            W_t         = e^(-λ · Δt)               λ=0.5, Δt=age in days
+            fatigue_raw = Σ(rating × W_t) / Σ(W_t)  range: 1.0–5.0
+            normalized  = (fatigue_raw - 1) / 4      range: 0.0–1.0
+            dim_554     = 1 - normalized              invert: low focus = high fatigue
+        """
+        cutoff = self.today - timedelta(days=self.LOOKBACK_DAYS)
+
+        sessions = (
+            self.db.query(PomodoroSession)
+            .filter(
+                PomodoroSession.user_id == self.user_id,
+                PomodoroSession.start_time >= cutoff,
+                func.extract("hour", PomodoroSession.start_time).between(
+                    start, end - 1
+                ),
+            )
+            .order_by(PomodoroSession.start_time.desc())
+            .limit(self.RECENT_HISTORY_LIMIT)
+            .all()
+        )
+
+        if not sessions:
+            return self._calculate_global_cognitive_fatigue()
+
+        numerator, denominator = 0.0, 0.0
+        for s in sessions:
+            rating = (
+                float(s.focus_rating)
+                if s.focus_rating is not None
+                else self._infer_session_quality(s)
+            )
+            _, weight = self._apply_time_decay(s, rating)
+            numerator += rating * weight
+            denominator += weight
+
+        fatigue_raw = numerator / denominator
+        normalized = (fatigue_raw - 1.0) / 4.0
+        dim_554 = 1.0 - normalized
+
+        return round(max(0.0, min(1.0, dim_554)), 3)
+
+    def _calculate_global_cognitive_fatigue(self) -> float:
+        """
+        Cold-start fallback — used when a slot has zero session history.
+        Uses the last 5 sessions regardless of time slot.
+        Once the student completes even 1 session in a slot,
+        that slot switches to its own specific calculation.
+        """
+        sessions = (
+            self.db.query(PomodoroSession)
+            .filter(PomodoroSession.user_id == self.user_id)
+            .order_by(PomodoroSession.start_time.desc())
+            .limit(self.RECENT_HISTORY_LIMIT)
+            .all()
+        )
+
+        if not sessions:
+            return 0.30  # default: slightly fresh with no data
+
+        numerator, denominator = 0.0, 0.0
+        for s in sessions:
+            rating = (
+                float(s.focus_rating)
+                if s.focus_rating is not None
+                else self._infer_session_quality(s)
+            )
+            _, weight = self._apply_time_decay(s, rating)
+            numerator += rating * weight
+            denominator += weight
+
+        fatigue_raw = numerator / denominator
+        normalized = (fatigue_raw - 1.0) / 4.0
+        dim_554 = 1.0 - normalized
+
+        return round(max(0.0, min(1.0, dim_554)), 3)
