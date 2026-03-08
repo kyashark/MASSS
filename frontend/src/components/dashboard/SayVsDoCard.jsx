@@ -140,7 +140,7 @@ export default function SayVsDoCard({ activeSlot = "Morning" }) {
         @keyframes sv-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
       `}</style>
 
-      <div className="animate-[sv-in_0.45s_ease_both] bg-white border border-slate-200 rounded-[14px] p-5 pb-4 w-full max-w-[400px] shadow-sm text-slate-800">
+      <div className="animate-[sv-in_0.45s_ease_both] bg-emerald-100 border border-slate-200 rounded-[14px] p-5 pb-4 w-full max-w-[400px] shadow-sm text-slate-800">
         
         {/* Header */}
         <div className="flex justify-between items-start mb-4">

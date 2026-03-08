@@ -121,7 +121,7 @@ export default function StateVectorCard({ initialSlot, onSlotChange }) {
         .animate-sv-delta { animation: sv-delta 0.4s ease both; }
       `}</style>
 
-      <div className="animate-sv-in bg-white border border-slate-200 rounded-[14px] p-5 pb-4 w-full max-w-[320px] shadow-sm font-['DM_Sans'] text-slate-800">
+      <div className="animate-sv-in bg-blue-200 border border-slate-200 rounded-[14px] p-5 pb-4 w-full max-w-[320px] shadow-sm font-['DM_Sans'] text-slate-800">
         
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
@@ -212,7 +212,7 @@ export default function StateVectorCard({ initialSlot, onSlotChange }) {
               </div>
               <div className="text-[8px] font-mono text-slate-400 mt-[2px]">
                 {data.class_event_name ?? "Recent class"}
-                {" · "}dim_554 boosted by {(data.post_class_fatigue * 0.40 * 100).toFixed(0)}%
+                {" · "} Boosted by {(data.post_class_fatigue * 0.40 * 100).toFixed(0)}%
               </div>
             </div>
             <span className="text-[12px] font-mono text-red-400 font-bold">

@@ -175,7 +175,7 @@ export default function ActionProbCard({ activeSlot = "Morning" }) {
         @keyframes ap-live { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
 
-      <div className={`animate-[ap-in_0.45s_ease_both] bg-white border rounded-[14px] p-5 pb-4 w-full max-w-[380px] shadow-sm text-slate-800 ${
+      <div className={`animate-[ap-in_0.45s_ease_both] bg-orange-200 border rounded-[14px] p-5 pb-4 w-full max-w-[380px] shadow-sm text-slate-800 ${
         isCrunch ? "border-red-200 ring-1 ring-red-50 shadow-[0_10px_40px_-10px_rgba(239,68,68,0.1)]" : "border-slate-200"
       }`}>
         
@@ -184,7 +184,7 @@ export default function ActionProbCard({ activeSlot = "Morning" }) {
           <div>
             <div className="text-[9px] font-mono font-bold tracking-[2px] text-amber-500 mb-1 uppercase">ACTION PROBABILITY DISTRIBUTION</div>
             <div className="font-['Syne'] text-[15px] font-extrabold tracking-tight text-slate-900 uppercase">π(a|s) · {activeSlot} Cycle</div>
-            <div className="text-[9px] font-mono text-slate-400 mt-1 uppercase tracking-tighter">
+            <div className="text-[9px] font-mono text-slate-900 mt-1 uppercase tracking-tighter">
               {data?.total_candidates ?? "—"} Candidates · Softmax T={data?.temperature ?? "—"}
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function ActionProbCard({ activeSlot = "Morning" }) {
         )}
 
         <div className="h-px bg-slate-100 mb-4" />
-        <div className="text-[8px] font-mono font-black text-slate-300 tracking-[2px] mb-3 uppercase text-center italic">Candidate Action Space</div>
+        <div className="text-[8px] font-mono font-black text-slate-900 tracking-[2px] mb-3 uppercase text-center italic">Candidate Action Space</div>
 
         {/* Action Rows Container */}
         <div className="space-y-2 mb-4">

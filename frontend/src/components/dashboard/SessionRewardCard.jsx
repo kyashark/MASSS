@@ -126,7 +126,7 @@ export default function SessionRewardCard() {
         @keyframes ap-live { 0%,100%{opacity:1} 50%{opacity:0.3} }
       `}</style>
 
-      <div className={`animate-ap-in bg-white border rounded-[14px] p-5 pb-4 w-full max-w-[380px] shadow-sm text-slate-800 ${isCrunch ? 'border-red-200' : 'border-slate-200'}`}>
+      <div className={`animate-ap-in bg-emerald-100 border rounded-[14px] p-5 pb-4 w-full max-w-[380px] shadow-sm text-slate-800 ${isCrunch ? 'border-red-200' : 'border-slate-200'}`}>
         
         {/* Header */}
         <div className="flex justify-between items-start mb-4">

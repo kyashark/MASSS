@@ -73,7 +73,7 @@ export default function ActionBridgeCard({ activeSlot = "Morning", onLaunchSessi
         @keyframes ab-crunch { 0%,100%{box-shadow:0 0 10px rgba(239,68,68,0.1)} 50%{box-shadow:0 0 20px rgba(239,68,68,0.2)} }
       `}</style>
 
-      <div className={`animate-[ab-in_0.4s_ease_both] bg-white border rounded-[14px] p-5 pb-4 w-full max-w-[380px] shadow-sm text-slate-800 ${isCrunch ? 'border-red-200 ring-1 ring-red-50 animate-[ab-crunch_2.5s_infinite]' : 'border-slate-200'}`}>
+      <div className={`animate-[ab-in_0.4s_ease_both] bg-orange-200 border rounded-[14px] p-5 pb-4 w-full max-w-[380px] shadow-sm text-slate-800 ${isCrunch ? 'border-red-200 ring-1 ring-red-50 animate-[ab-crunch_2.5s_infinite]' : 'border-slate-200'}`}>
         
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
