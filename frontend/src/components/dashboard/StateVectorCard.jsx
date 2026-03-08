@@ -201,6 +201,26 @@ export default function StateVectorCard({ initialSlot, onSlotChange }) {
           <Bar value={fatigue} colorClass={fBgClass} h="h-[8px]" />
         </div>
 
+        {/* Post-Class Fatigue Banner — only renders when a class ended recently */}
+        {data?.post_class_fatigue > 0 && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[9px] mb-3"
+            style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.20)" }}>
+            <span style={{ fontSize: 13 }}>🎓</span>
+            <div className="flex-1">
+              <div className="text-[9px] font-mono text-red-400 tracking-widest uppercase font-bold">
+                Post-Class Fatigue Active
+              </div>
+              <div className="text-[8px] font-mono text-slate-400 mt-[2px]">
+                {data.class_event_name ?? "Recent class"}
+                {" · "}dim_554 boosted by {(data.post_class_fatigue * 0.40 * 100).toFixed(0)}%
+              </div>
+            </div>
+            <span className="text-[12px] font-mono text-red-400 font-bold">
+              +{(data.post_class_fatigue * 0.40 * 100).toFixed(0)}%
+            </span>
+          </div>
+        )}
+
         {/* dim_555: Academic Pressure */}
         <div className="bg-slate-50 border border-slate-200 rounded-[10px] p-[12px_14px] mb-3">
           <div className="flex justify-between items-center mb-2">

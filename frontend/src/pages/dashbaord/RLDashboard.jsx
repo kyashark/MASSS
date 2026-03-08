@@ -114,89 +114,112 @@ export default function ItemDashboard() {
           {/* Right Column: Signal Deep Dive */}
           <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-700">
             {/* Environmental Signal: Cognitive Fatigue */}
-            <SignalExplainCard
-              // icon="🧠"
-              title="🧠 Cognitive Fatigue"
-              dim="dim_603"
-              color="indigo"
-              desc={
-                <>
-                  <p className="text-[12px]">
-                    Measures <b>mental tiredness</b> based on your last{" "}
-                    <b>5 focus ratings</b>. Recent sessions are weighted more
-                    using an <b>exponential time-decay</b> formula.
-                  </p>
+<SignalExplainCard
+  title="🧠 Cognitive Fatigue"
+  dim="dim_603"
+  color="indigo"
+  desc={
+    <>
+      <p className="text-[12px]">
+        Measures <b>mental tiredness</b> using the student's last{" "}
+        <b>5 focus ratings</b> and today's <b>schedule context</b>.
+        Recent sessions influence the signal more using an{" "}
+        <b>exponential time-decay</b> formula.
+      </p>
 
-                  <p className="mt-4 font-semibold text-slate-800 text-[12px]">
-                    Time Decay Formula
-                  </p>
-                  <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 my-2">
-                    <p className="text-sm font-mono text-indigo-900 text-center">
-                      W<sub>t</sub> = e<sup>-λ·Δt</sup> &nbsp; (λ = 0.5)
-                    </p>
-                  </div>
+      {/* STEP 1 */}
+      <p className="mt-4 font-semibold text-slate-800 text-[12px]">
+        Step 1 — Time Decay
+      </p>
+      <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 my-2">
+        <p className="text-sm font-mono text-indigo-900 text-center">
+          W<sub>t</sub> = e<sup>-λ·Δt</sup> &nbsp; (λ = 0.5)
+        </p>
+      </div>
 
-                  <ul className="list-disc list-inside mt-1 mb-4 text-xs text-slate-600 space-y-1">
-                    <li>
-                      <b>
-                        W<sub>t</sub>
-                      </b>{" "}
-                      – session weight (0.0–1.0)
-                    </li>
-                    <li>
-                      <b>λ (Lambda)</b> – decay rate (0.5)
-                    </li>
-                    <li>
-                      <b>Δt</b> – age of session in days
-                    </li>
-                  </ul>
+      <ul className="list-disc list-inside mt-1 mb-4 text-xs text-slate-600 space-y-1">
+        <li>
+          <b>W<sub>t</sub></b> – session weight (0.0–1.0)
+        </li>
+        <li>
+          <b>λ (Lambda)</b> – decay rate (0.5)
+        </li>
+        <li>
+          <b>Δt</b> – age of session in days
+        </li>
+      </ul>
 
-                  <p className="font-semibold text-slate-800 text-[12px]">
-                    Example Weights
-                  </p>
-                  <div className="bg-white border border-slate-100 rounded-lg p-3 mt-2 mb-4">
-                    <ul className="space-y-1 text-xs font-mono">
-                      <li className="flex justify-between">
-                        <span>Today (Δt = 0)</span>{" "}
-                        <span className="text-indigo-600 font-bold">
-                          100% Weight
-                        </span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span>Yesterday (Δt = 1)</span>{" "}
-                        <span className="text-slate-500">60% Weight</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span>Two Days Ago (Δt = 2)</span>{" "}
-                        <span className="text-slate-400">36% Weight</span>
-                      </li>
-                    </ul>
-                  </div>
+      {/* STEP 2 */}
+      <p className="font-semibold text-slate-800 text-[12px]">
+        Step 2 — Weighted Average
+      </p>
+      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 my-2 font-mono text-[11px] text-slate-700">
+        fatigue<sub>raw</sub> = Σ(rating × weight) / Σ(weight)
+      </div>
 
-                  <p className="font-semibold text-slate-800 text-[12px]">
-                    Weighted Average & Normalization
-                  </p>
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 my-2 space-y-2 font-mono text-[11px] text-slate-700">
-                    <p>
-                      fatigue<sub>raw</sub> = Σ(rating × weight) / Σ(weight)
-                    </p>
-                    <p>
-                      normalized = (fatigue<sub>raw</sub> − 1.0) / 4.0
-                    </p>
-                  </div>
+      {/* STEP 3 */}
+      <p className="font-semibold text-slate-800 text-[12px]">
+        Step 3 — Normalization
+      </p>
+      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 my-2 font-mono text-[11px] text-slate-700">
+        normalized = (fatigue<sub>raw</sub> − 1.0) / 4.0
+      </div>
 
-                  <p className="font-semibold text-slate-800 mt-4 text-[12px]">
-                    Final Fatigue Signal
-                  </p>
-                  <div className="bg-green-700 text-white p-2 rounded-lg mt-2 text-center">
-                    <p className="text-sm font-mono">
-                      fatigue = 1.0 − normalized ( 1.0 = Maximum
-                      Exhaustion){" "}
-                    </p>
-                  </div>
-                </>
-              }
-            />
+      {/* STEP 4 */}
+      <p className="font-semibold text-slate-800 text-[12px]">
+        Step 4 — Session Fatigue Signal
+      </p>
+      <div className="bg-green-50 p-3 rounded-lg border border-slate-200 my-2 font-mono text-[11px] text-slate-700">
+      
+          session_fatigue = 1.0 − normalized
+     
+        <p className="text-[10px] opacity-80">
+          (1.0 = maximum exhaustion)
+        </p>
+      </div>
+
+      {/* STEP 5 */}
+      <p className="font-semibold text-slate-800 mt-4 text-[12px]">
+        Step 5 — Schedule-Aware Boost
+      </p>
+
+      <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 my-2 space-y-1 font-mono text-[11px] text-indigo-900">
+        <p>post_class = decay × duration_weight × activity_weight</p>
+      </div>
+
+      <ul className="list-disc list-inside mt-1 mb-3 text-xs text-slate-600 space-y-1">
+        <li>
+          <b>decay</b> = e<sup>−0.8 · hours_ago</sup> (fades over 3 hrs)
+        </li>
+        <li>
+          <b>duration_weight</b> – 1hr = 0.33 · 3hr = 1.0
+        </li>
+        <li>
+          <b>activity_weight</b> – CLASS 1.0 · WORK 0.7 · HABIT 0.3
+        </li>
+      </ul>
+
+      {/* STEP 6 */}
+      <p className="font-semibold text-slate-800 text-[12px]">
+        Step 6 — Final Composite Signal
+      </p>
+
+      <div className="bg-indigo-600 text-white p-2 rounded-lg mt-2 text-center">
+        <p className="text-sm font-mono">
+          Final Fatigue Signal = min(1.0, session_fatigue + post_class × 0.40)
+        </p>
+      </div>
+
+      <div className="bg-slate-100 text-slate-600 p-2 rounded-lg text-center text-[10px] font-mono italic mt-2">
+        Combines behavioral fatigue with real-time schedule context
+      </div>
+
+      <div className="bg-slate-100 text-slate-600 p-2 rounded-lg text-center text-[10px] font-mono italic mt-2">
+        Signal fires before any session starts — proactive signal for the RL state vector
+      </div>
+    </>
+  }
+/>
 
             {/* Environmental Signal: Work Intensity */}
             <SignalExplainCard
@@ -300,10 +323,10 @@ export default function ItemDashboard() {
                   <p className="font-bold text-slate-900">
                     3. Global Context (2)
                   </p>
-                  <p className="text-slate-500">
-                    Live Cognitive Fatigue and Work Intensity signals that
-                    modulate reward expectations.
-                  </p>
+<p className="text-slate-500">
+  Live Cognitive Fatigue (session history + class schedule) 
+  and Work Intensity signals that modulate reward expectations.
+</p>
                 </div>
               </div>
             </div>

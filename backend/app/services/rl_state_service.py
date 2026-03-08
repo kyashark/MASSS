@@ -106,4 +106,8 @@ class RLStateService:
             },
             "trend": trend,
             "active_slot": active_slot,
+            "post_class_fatigue": round(
+                self.analytics._calculate_post_class_fatigue(), 3
+            ),
+            "class_event_name": self.analytics._get_most_recent_class_name(),
         }
