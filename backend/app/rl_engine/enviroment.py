@@ -1,11 +1,5 @@
 # rl_engine/environment.py
 
-"""
-RL environment simulation.
-
-Manages episode state, history buffer, and no-op actions.
-"""
-
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -27,10 +21,7 @@ class StudentSchedulingEnv(gym.Env):
         self.pending_tasks = task_data
         self.user_profile = user_profile
 
-        # Action Space: [Task_ID, Slot_ID]
         self.action_space = spaces.MultiDiscrete([self.cfg.MAX_TASKS + 1, 3])
-
-        # Observation Space
         self.observation_space = spaces.Box(
             low=0,
             high=1,
@@ -41,7 +32,7 @@ class StudentSchedulingEnv(gym.Env):
         self.recent_ratings = deque(maxlen=self.cfg.HISTORY_LEN)
         self.todays_capacity = {}
         self.current_step = 0
-        self.max_steps = 20
+        self.max_steps = 30
 
     def _safe_get(self, obj, key, default=None):
         if isinstance(obj, dict):
@@ -51,15 +42,9 @@ class StudentSchedulingEnv(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.current_step = 0
-
-        # 1. Track Task Usage (New!)
-        # Stores how many times we've scheduled each task ID in this episode
         self.task_usage = {}
-
-        # Capture intensity from the fresh analytics context
         self.work_intensity = self.user_profile.get("work_intensity", 0.0)
 
-        # ... (Rest of your capacity/profile loading logic stays the same) ...
         user_stats = self.user_profile.get("energy_map", {})
         morn = user_stats.get("Morning", 3.0)
         aft = user_stats.get("Afternoon", 3.0)
@@ -68,7 +53,18 @@ class StudentSchedulingEnv(gym.Env):
         def calc_cap(focus):
             return int(max(2, min(6, focus + 1)))
 
-        self.todays_capacity = {0: calc_cap(morn), 1: calc_cap(aft), 2: calc_cap(eve)}
+        # FIXED: use string keys "Morning"/"Afternoon"/"Evening"
+        # state_builder.build_state() calls capacity_map.get("Morning", 4.0)
+        # With int keys {0,1,2} it always got the 4.0 default — slot capacity
+        # was never actually used during training.
+        self.todays_capacity = {
+            "Morning": calc_cap(morn),
+            "Afternoon": calc_cap(aft),
+            "Evening": calc_cap(eve),
+        }
+
+        # Keep int-keyed version for slot indexing in step()
+        self._slot_names = ["Morning", "Afternoon", "Evening"]
 
         hist = self.user_profile.get("recent_ratings", [])
         clean_hist = [float(x) for x in hist if x is not None]
@@ -80,18 +76,19 @@ class StudentSchedulingEnv(gym.Env):
         self.current_step += 1
         task_idx, slot_idx = action[0], action[1]
 
-        # === TERMINATION CHECK ===
+        slot_name = self._slot_names[slot_idx]
+
         terminated = (
             self.current_step >= self.max_steps
             or sum(self.todays_capacity.values()) <= 0
         )
 
-        # === CASE 1: NO-OP ACTION ===
+        # NO-OP
         if task_idx == 0:
             reward = self.reward_engine.calculate_reward(None, "NO_OP", None)
             return self._get_obs(), reward, terminated, False, {"valid": True}
 
-        # === CASE 2: REAL TASK VALIDATION ===
+        # Invalid task index
         real_task_idx = task_idx - 1
         if real_task_idx >= len(self.pending_tasks):
             return (
@@ -104,15 +101,15 @@ class StudentSchedulingEnv(gym.Env):
 
         task = self.pending_tasks[real_task_idx]
 
-        # Check if task is already done/over-scheduled
+        # Over-scheduled check
         needed = self._safe_get(task, "estimated_pomodoros", 1) - self._safe_get(
             task, "sessions_count", 0
         )
         if self.task_usage.get(real_task_idx, 0) >= needed:
             return self._get_obs(), -5.0, terminated, False, {"valid": False}
 
-        # Check if time slot is full
-        if self.todays_capacity[slot_idx] <= 0:
+        # Slot full check
+        if self.todays_capacity[slot_name] <= 0:
             return (
                 self._get_obs(),
                 self.cfg.PENALTY_OVERLOAD,
@@ -121,26 +118,34 @@ class StudentSchedulingEnv(gym.Env):
                 {"valid": False},
             )
 
-        # === APPLY ACTION ===
-        self.todays_capacity[slot_idx] -= 1
+        # Apply action
+        self.todays_capacity[slot_name] -= 1
         self.task_usage[real_task_idx] = self.task_usage.get(real_task_idx, 0) + 1
 
-        # === SIMULATE PERFORMANCE ===
+        # Simulate performance
         difficulty = self._safe_get(task, "difficulty", 1)
         avg_focus = np.mean(self.recent_ratings) if self.recent_ratings else 5.0
         intensity = self.user_profile.get("work_intensity", 0.0)
 
-        # Logic for "Crunch Mode" vs "Normal Fatigue"
         if difficulty > 3 and avg_focus < 3.0:
-            if intensity > 0.8:
-                simulated_rating = 3.5  # Crunch Mode: Pushing through for exams
-            else:
-                simulated_rating = 2.0  # Normal Mode: Fatigue causes poor quality
+            simulated_rating = 3.5 if intensity > 0.8 else 2.0
         else:
-            simulated_rating = 5.0  # High focus or manageable task
+            simulated_rating = 5.0
 
         self.recent_ratings.append(simulated_rating)
-        reward = self.reward_engine.calculate_reward(task, "SUCCESS", simulated_rating)
+
+        # Pass slot_energy so agent learns to prefer high-energy slots.
+        # energy_map keys: "Morning"/"Afternoon"/"Evening" → values 1.0–5.0
+        energy_map = self.user_profile.get("energy_map", {})
+        slot_energy = energy_map.get(slot_name, 3.0)
+
+        reward = self.reward_engine.calculate_reward(
+            task,
+            "SUCCESS",
+            simulated_rating,
+            work_intensity=intensity,
+            slot_energy=slot_energy,
+        )
 
         if sum(self.todays_capacity.values()) <= 0:
             terminated = True
@@ -148,12 +153,10 @@ class StudentSchedulingEnv(gym.Env):
         return self._get_obs(), reward, terminated, False, {"valid": True}
 
     def _get_obs(self):
-        # Pull work_intensity from the user_profile (provided by analytics.py)
         intensity = self.user_profile.get("work_intensity", 0.5)
-
         return self.state_builder.build_state(
             self.pending_tasks,
             self.todays_capacity,
             list(self.recent_ratings),
-            intensity,  # <--- New 4th argument
+            intensity,
         )

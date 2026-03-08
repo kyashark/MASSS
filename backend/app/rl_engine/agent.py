@@ -4,7 +4,6 @@ from stable_baselines3 import PPO
 from pathlib import Path
 from app.rl_engine.enviroment import StudentSchedulingEnv
 
-# --- PATH SETUP ---
 current_file = Path(__file__).resolve()
 PROJECT_ROOT = current_file.parent.parent.parent
 MODEL_DIR = PROJECT_ROOT / "rl_models"
@@ -12,53 +11,76 @@ os.makedirs(MODEL_DIR, exist_ok=True)
 
 
 def train_agent():
-    # 1. UPDATED: Create Rich Dummy Data
-    # To learn the "Crunch Logic," the agent needs to see intensity and energy in training
-    dummy_tasks = [
-        {
-            "id": i,
-            "title": f"Task {i}",
-            "priority": "HIGH" if i < 3 else "LOW",
-            "difficulty": 4 if i < 5 else 2,
-            "category": "Math" if i < 5 else "Coding",
-            "estimated_pomodoros": 4,
-            "sessions_count": 0,
-            "days_until": 2 if i < 3 else 14,  # Some urgent, some not
-        }
-        for i in range(10)
+    dummy_tasks = []
+    for i in range(15):
+        if i < 4:
+            prio, diff, days, pomo, cat = "HIGH", 4, 2, 2, "Math/Logic"
+        elif i < 8:
+            prio, diff, days, pomo, cat = "MEDIUM", 3, 7, 2, "Coding"
+        elif i < 12:
+            prio, diff, days, pomo, cat = "LOW", 2, 20, 2, "Memorization"
+        else:
+            prio, diff, days, pomo, cat = "MEDIUM", 2, 14, 2, "Language"
+
+        dummy_tasks.append(
+            {
+                "id": i,
+                "name": f"Task {i}",
+                "priority": prio,
+                "difficulty": diff,
+                "category": cat,
+                "estimated_pomodoros": pomo,
+                "sessions_count": 0,
+                "days_until": days,
+                "status": "PENDING",
+            }
+        )
+
+    profiles = [
+        {  # Morning person
+            "work_intensity": 0.9,
+            "energy_map": {"Morning": 4.5, "Afternoon": 3.0, "Evening": 2.0},
+            "recent_ratings": [4, 5, 4, 3, 4],
+        },
+        {  # Afternoon person
+            "work_intensity": 0.5,
+            "energy_map": {"Morning": 2.5, "Afternoon": 4.5, "Evening": 3.0},
+            "recent_ratings": [3, 3, 4, 4, 3],
+        },
+        {  # Evening person
+            "work_intensity": 0.3,
+            "energy_map": {"Morning": 2.0, "Afternoon": 3.0, "Evening": 4.5},
+            "recent_ratings": [2, 3, 3, 4, 5],
+        },
     ]
 
-    # New: Add the Intensity and Energy Map to the profile
-    dummy_profile = {
-        "work_intensity": 0.9,  # Start training in "Crunch Mode" to teach urgency
-        "energy_map": {"Morning": 4.0, "Afternoon": 3.0, "Evening": 2.5},
-        "recent_ratings": [4, 3, 2, 3, 4],
-    }
+    for idx, profile in enumerate(profiles):
+        print(f"\n{'=' * 50}")
+        print(
+            f"Training profile {idx + 1}/3: best_slot={max(profile['energy_map'], key=profile['energy_map'].get)}"
+        )
 
-    # 2. Init Environment
-    # The Env now automatically pulls 555 dimensions because of our StateBuilder update
-    env = StudentSchedulingEnv(dummy_profile, dummy_tasks)
+        env = StudentSchedulingEnv(profile, dummy_tasks)
+        print(f"Observation space: {env.observation_space.shape}")
 
-    # 3. Create Model
-    # Policy: MlpPolicy (Multi-Layer Perceptron)
-    # The model will automatically detect the 555-dim input from env.observation_space
-    model = PPO(
-        "MlpPolicy", env, verbose=1, learning_rate=0.0003, tensorboard_log="./rl_logs/"
-    )
+        if idx == 0:
+            model = PPO(
+                "MlpPolicy",
+                env,
+                verbose=1,
+                learning_rate=0.0003,
+                ent_coef=0.01,
+                tensorboard_log="./rl_logs/",
+            )
+        else:
+            model.set_env(env)
 
-    # 4. Train
-    print("Training RL Agent with 555-dimension state space...")
-    print(f"Observation space: {env.observation_space.shape}")  # Should show (555,)
+        model.learn(total_timesteps=100000, reset_num_timesteps=(idx == 0))
 
-    # We use 50k timesteps to allow the agent to discover the intensity patterns
-    model.learn(total_timesteps=50000)
-
-    # 5. SAVE WITH TIMESTAMP
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     save_path = os.path.join(MODEL_DIR, f"ppo_scheduler_{timestamp}")
-
     model.save(save_path)
-    print(f"Model Saved at: {save_path}")
+    print(f"\nModel saved: {save_path}")
 
 
 if __name__ == "__main__":

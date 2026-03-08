@@ -3,7 +3,6 @@
 """
 Centralized configuration for easy tweaking.
 Defines state space constraints, reward weights, and penalties.
-
 """
 
 
@@ -14,25 +13,32 @@ class RLConfig:
     MAX_DAYS_DUE = 30  # Max days until deadline (for normalization)
     HISTORY_LEN = 5  # How many past focus ratings to remember
 
-    # One-Hot Encoding for Categories: [Math, Coding, Creative, Memorization, Other]
+    # One-Hot Encoding for Categories
+    # FIXED: keys now match Category enum .value strings exactly
+    # Category.MATH      = "Math/Logic"
+    # Category.CODING    = "Coding"
+    # Category.CREATIVE  = "Creative Design"
+    # Category.LANGUAGE  = "Language"        ← was missing
+    # Category.MEMORIZATION = "Memorization"
+    # Category.OTHER     = "Other"
     CATEGORY_MAP = {
-        "Math": 0,
-        "Coding": 1,
-        "Creative": 2,
-        "Memorization": 3,
-        "Other": 4,
+        "Math/Logic": 0,  # was "Math"
+        "Coding": 1,  # correct
+        "Creative Design": 2,  # was "Creative"
+        "Language": 3,  # was missing entirely — mapped to Other before
+        "Memorization": 4,  # correct
+        "Other": 5,  # was index 4, shifted to 5
     }
-    NUM_CATEGORIES = 5
+    NUM_CATEGORIES = 6  # was 5 — Language was missing
 
-    # --- Reward Weights (The "W" values from your doc) ---
+    # --- Reward Weights ---
     # R = (w1 * Focus) + (w2 * Completion) - (w3 * Delay) - (w4 * Abort)
     W_FOCUS = 2.0  # Reward for high focus rating (1-5 scale)
     W_COMPLETION = 10.0  # Bonus for finishing a task
     W_DELAY = 1.0  # Penalty per day overdue
     W_ABORT = 5.0  # Penalty for aborted session
 
-    # --- NEW: Contextual Reward Modifiers ---
-    # These constants power the "Coach Logic" in your Reward Engine
+    # --- Contextual Reward Modifiers ---
     W_INTENSITY_WEIGHT = 0.7  # Balance factor between energy and deadlines
     REWARD_CRUNCH_MULTIPLIER = 1.5  # 50% bonus for urgent tasks during exams
     FATIGUE_PENALTY_GRACE = 0.5  # Reduce fatigue penalty by 50% during crunch
