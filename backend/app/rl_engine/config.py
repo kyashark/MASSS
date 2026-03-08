@@ -47,3 +47,8 @@ class RLConfig:
     PENALTY_INVALID_ACTION = -5.0  # AI picked a task ID that doesn't exist
     PENALTY_OVERLOAD = -10.0  # AI tried to put task in full slot
     PENALTY_FATIGUE_IGNORE = -2.0  # AI scheduled Hard task when Fatigue was High
+
+    # ── Fixed Schedule Integration ─────────────────────────────────
+    POST_CLASS_FATIGUE_WEIGHT = 0.40  # how much class fatigue blends into dim_554
+    CLASS_FATIGUE_DECAY_RATE = 0.80  # how fast post-class fatigue fades per hour
+    CLASS_FATIGUE_WINDOW_HRS = 3.0  # how many hours after class to apply fatigue

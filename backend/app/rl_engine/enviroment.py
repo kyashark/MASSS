@@ -70,6 +70,13 @@ class StudentSchedulingEnv(gym.Env):
         clean_hist = [float(x) for x in hist if x is not None]
         self.recent_ratings = deque(clean_hist, maxlen=self.cfg.HISTORY_LEN)
 
+        # In reset(), after loading hist:
+        post_class = self.user_profile.get("post_class_fatigue", 0.0)
+        # Blend into recent_ratings to simulate post-lecture tiredness
+        if post_class > 0.5 and self.recent_ratings:
+            # inject a low rating to represent post-class state
+            self.recent_ratings.append(max(1.0, 3.0 - (post_class * 2.0)))
+
         return self._get_obs(), {}
 
     def step(self, action):

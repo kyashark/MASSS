@@ -52,12 +52,30 @@ def train_agent():
             "energy_map": {"Morning": 2.0, "Afternoon": 3.0, "Evening": 4.5},
             "recent_ratings": [2, 3, 3, 4, 5],
         },
+        {  # Morning person — post 9AM lecture
+            "work_intensity": 0.7,
+            "energy_map": {"Morning": 2.0, "Afternoon": 3.5, "Evening": 3.0},
+            "recent_ratings": [2, 2, 3, 3, 2],  # low — tired after class
+            "post_class_fatigue": 0.8,
+        },
+        {  # Afternoon person — post 2PM lab
+            "work_intensity": 0.9,
+            "energy_map": {"Morning": 3.0, "Afternoon": 1.5, "Evening": 4.0},
+            "recent_ratings": [3, 2, 2, 1, 2],
+            "post_class_fatigue": 0.9,
+        },
+        {  # Evening person — free morning
+            "work_intensity": 0.4,
+            "energy_map": {"Morning": 4.0, "Afternoon": 3.5, "Evening": 4.5},
+            "recent_ratings": [4, 5, 4, 4, 5],
+            "post_class_fatigue": 0.0,
+        },
     ]
 
     for idx, profile in enumerate(profiles):
         print(f"\n{'=' * 50}")
         print(
-            f"Training profile {idx + 1}/3: best_slot={max(profile['energy_map'], key=profile['energy_map'].get)}"
+            f"Training profile {idx + 1}/{len(profiles)}: best_slot={max(profile['energy_map'], key=profile['energy_map'].get)}"
         )
 
         env = StudentSchedulingEnv(profile, dummy_tasks)

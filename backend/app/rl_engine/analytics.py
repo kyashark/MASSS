@@ -7,7 +7,8 @@ from app.models.session import PomodoroSession, SessionEndType
 from app.models.task import Task
 from app.models.module import Module
 from app.models.profile import SlotPreference
-
+from app.models.profile import WeeklyRoutine, ActivityType, DayOfWeek
+from app.rl_engine.config import RLConfig
 
 # ═══════════════════════════════════════════════════════════════
 # SHARED HELPER — used by analytics, state_builder, reward, card
@@ -217,6 +218,10 @@ class UserAnalyticsService:
 
         context_energy = 5.0 - (intensity * 4.0)
 
+        # Reduce context_energy if a class runs inside this slot today
+        slot_class_load = self._calculate_slot_class_load(start, end)
+        context_energy = context_energy * (1.0 - slot_class_load * 0.5)
+
         if not sessions:
             final_energy = max(1.0, min(5.0, context_energy))
         else:
@@ -239,6 +244,44 @@ class UserAnalyticsService:
             self.db.commit()
 
         return final_energy
+
+    def _calculate_slot_class_load(self, slot_start: int, slot_end: int) -> float:
+        """
+        Returns 0.0–1.0 representing how much of this slot is
+        consumed by CLASS or WORK events today.
+        0.5 = half the slot is taken by a class.
+        1.0 = entire slot is a class block.
+        """
+        now = datetime.now()
+        today_name = now.strftime("%A")
+        slot_mins = (slot_end - slot_start) * 60
+
+        events = (
+            self.db.query(WeeklyRoutine)
+            .filter(
+                WeeklyRoutine.user_id == self.user_id,
+                WeeklyRoutine.day_of_week == today_name,
+                WeeklyRoutine.activity_type.in_(
+                    [ActivityType.CLASS, ActivityType.WORK]
+                ),
+            )
+            .all()
+        )
+
+        if not events:
+            return 0.0
+
+        overlap_mins = 0
+        for e in events:
+            e_start = e.start_time.hour * 60 + e.start_time.minute
+            e_end = e.end_time.hour * 60 + e.end_time.minute
+            s_start = slot_start * 60
+            s_end = slot_end * 60
+            # overlap = intersection of [e_start,e_end] and [s_start,s_end]
+            overlap = max(0, min(e_end, s_end) - max(e_start, s_start))
+            overlap_mins += overlap
+
+        return round(min(overlap_mins / slot_mins, 1.0), 3)
 
     def _compute_behavioral_score(self, sessions):
         signals = [
@@ -393,7 +436,8 @@ class UserAnalyticsService:
         fatigue_raw = numerator / denominator
         normalized = (fatigue_raw - 1.0) / 4.0
         dim_554 = 1.0 - normalized
-        return round(max(0.0, min(1.0, dim_554)), 3)
+
+        return self._apply_post_class_merge(dim_554)
 
     def _calculate_global_cognitive_fatigue(self) -> float:
         sessions = (
@@ -420,7 +464,96 @@ class UserAnalyticsService:
         fatigue_raw = numerator / denominator
         normalized = (fatigue_raw - 1.0) / 4.0
         dim_554 = 1.0 - normalized
-        return round(max(0.0, min(1.0, dim_554)), 3)
+
+        return self._apply_post_class_merge(dim_554)
+
+    def _apply_post_class_merge(self, dim_554: float) -> float:
+        """Shared merge — called by both fatigue calculators."""
+        post_class = self._calculate_post_class_fatigue()
+        cfg = RLConfig()
+        merged = min(1.0, dim_554 + (post_class * cfg.POST_CLASS_FATIGUE_WEIGHT))
+        return round(max(0.0, min(1.0, merged)), 3)
+
+    def _calculate_post_class_fatigue(self) -> float:
+        """
+        Reads today's WeeklyRoutine CLASS events.
+        If a class ended within the last 3 hours, returns a fatigue
+        boost (0.0–1.0) based on:
+        - how recently it ended  (exponential decay)
+        - how long it was        (longer = more fatigue)
+        - ActivityType           (CLASS=1.0, WORK=0.7, HABIT=0.3, SLEEP=0)
+        This runs BEFORE a session starts — so the agent gets the
+        signal even if the student hasn't done any Pomodoro yet.
+        """
+        now = datetime.now()
+        today_name = now.strftime("%A")  # "Monday", "Tuesday" etc.
+
+        # Fetch today's routine events
+        events = (
+            self.db.query(WeeklyRoutine)
+            .filter(
+                WeeklyRoutine.user_id == self.user_id,
+                WeeklyRoutine.day_of_week == today_name,
+                WeeklyRoutine.activity_type != ActivityType.SLEEP,
+            )
+            .all()
+        )
+
+        if not events:
+            return 0.0
+
+        cfg = RLConfig()
+        total_boost = 0.0
+
+        INTENSITY_MAP = {
+            ActivityType.CLASS: 1.0,
+            ActivityType.WORK: 0.7,
+            ActivityType.HABIT: 0.3,
+        }
+
+        for event in events:
+            # Build end_time as today's datetime
+            end_dt = datetime.combine(now.date(), event.end_time)
+
+            # Only events that already ended, within the window
+            if end_dt > now:
+                continue
+            hours_ago = (now - end_dt).total_seconds() / 3600
+            if hours_ago > cfg.CLASS_FATIGUE_WINDOW_HRS:
+                continue
+
+            # Duration weight — 1hr class = 0.33, 3hr class = 1.0
+            start_dt = datetime.combine(now.date(), event.start_time)
+            duration_hrs = (end_dt - start_dt).total_seconds() / 3600
+            duration_w = min(duration_hrs / 3.0, 1.0)
+
+            # Exponential decay over time
+            decay = exp(-cfg.CLASS_FATIGUE_DECAY_RATE * hours_ago)
+
+            # Activity intensity weight
+            intensity_w = INTENSITY_MAP.get(event.activity_type, 0.5)
+
+            total_boost += decay * duration_w * intensity_w
+
+        return round(min(total_boost, 1.0), 3)
+
+    def _get_most_recent_class_name(self) -> str | None:
+        now = datetime.now()
+        today_name = now.strftime("%A")
+        events = (
+            self.db.query(WeeklyRoutine)
+            .filter(
+                WeeklyRoutine.user_id == self.user_id,
+                WeeklyRoutine.day_of_week == today_name,
+                WeeklyRoutine.activity_type == ActivityType.CLASS,
+            )
+            .all()
+        )
+        ended = [e for e in events if datetime.combine(now.date(), e.end_time) <= now]
+        if not ended:
+            return None
+        latest = max(ended, key=lambda e: e.end_time)
+        return latest.name
 
     def _calculate_slot_energy_raw(self, slot_name, start, end, intensity):
         """Returns raw 1-5 score without writing to DB. Used by dashboard services."""
