@@ -177,7 +177,7 @@ export default function StateVectorCard({ initialSlot, onSlotChange }) {
         <div className="bg-slate-50 border border-slate-200 rounded-[10px] p-[12px_14px] mb-3 transition-all duration-500">
           <div className="flex justify-between items-center mb-[10px]">
             <span className="text-[11px] text-slate-500">
-                Cognitive Fatigue <span className="font-mono text-[9px] text-slate-400 ml-1.5 uppercase">dim_554</span>
+                Cognitive Fatigue 
             </span>
             <div className="flex items-center gap-[7px]">
               {delta != null && Math.abs(delta) > 0.005 && (
@@ -205,7 +205,7 @@ export default function StateVectorCard({ initialSlot, onSlotChange }) {
         <div className="bg-slate-50 border border-slate-200 rounded-[10px] p-[12px_14px] mb-3">
           <div className="flex justify-between items-center mb-2">
             <span className="text-[11px] text-slate-500">
-                Academic Pressure <span className="font-mono text-[9px] text-slate-400 ml-1 uppercase">dim_555</span>
+                Work Intensity
             </span>
             <span className="font-mono text-[14px] font-bold text-slate-800">
               <AnimatedNumber value={workload * 100} decimals={0} suffix="%" />
@@ -219,7 +219,7 @@ export default function StateVectorCard({ initialSlot, onSlotChange }) {
 
         {/* Footer info */}
         <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex justify-between">
-          <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tight">λ=0.5 · window=5 · context=true</span>
+          {/* <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tight">λ=0.5 · window=5 · context=true</span> */}
           <span className="text-[8px] font-mono text-slate-400 uppercase font-bold tracking-tight">
             {isLive ? "Real-time Tracking" : "Historical View"}
           </span>
