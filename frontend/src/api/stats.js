@@ -2,6 +2,6 @@ import axiosClient from "./axiosClient";
 
 // GET dashboard stats (Energy Battery, Pulse, etc.)
 export const fetchDashboardStats = async () => {
-  const res = await axiosClient.get("/dashboard/stats");
+  const res = await axiosClient.get("/api/stats");
   return res.data;
 };

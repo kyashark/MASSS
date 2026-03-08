@@ -50,10 +50,10 @@ const ScheduleCard = ({ navigate }) => {
       <div className="flex items-center justify-between mb-4 z-10">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-slate-100 rounded-lg">
-            <Calendar size={20} className="text-slate-700" />
+            {/* <Calendar size={20} className="text-slate-700" /> */}
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-800">Today's Plan</h2>
+            <h2 className="text-[23px] font-[800] font-mono tracking-[-0.02em] text-[#0f172a] mt-1">Today Plan</h2>
             <p className="text-xs text-slate-500">Auto-generated Schedule</p>
           </div>
         </div>

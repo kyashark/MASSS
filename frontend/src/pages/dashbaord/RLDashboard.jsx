@@ -60,7 +60,7 @@ export default function ItemDashboard() {
     setExpanded((prev) => ({ ...prev, [index]: !prev[index] }));
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 lg:p-10 font-['DM_Sans'] text-slate-900">
+    <div className="min-h-screen bg-slate-100 p-6 lg:p-10 font-['DM_Sans'] text-slate-900">
       {/* ── HEADER SECTION ────────────────────────────────────────── */}
       <header className="mb-10 flex flex-col md:flex-row justify-between items-start gap-6">
         <div>
@@ -94,14 +94,14 @@ export default function ItemDashboard() {
       </header>
 
       {/* ── PHASE 1: PERCEPTION ───────────────────────────────────── */}
-      <section className="mb-12">
+      <section className="mb-12 ">
         <PhaseHeader
           data={PHASES[0]}
           isExpanded={expanded[0]}
           onToggle={() => togglePhase(0)}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12  mt-6 bg-pink-300">
+        <div className="grid grid-cols-1 lg:grid-cols-12  mt-6">
           {/* Left Column: Visual State Vector Summary */}
           <div className="lg:col-span-3">
             <StateVectorCard
@@ -112,7 +112,7 @@ export default function ItemDashboard() {
           </div>
 
           {/* Right Column: Signal Deep Dive */}
-          <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-700">
+          <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4 ">
             {/* Environmental Signal: Cognitive Fatigue */}
 <SignalExplainCard
   title="🧠 Cognitive Fatigue"
@@ -180,7 +180,7 @@ export default function ItemDashboard() {
 
       {/* STEP 5 */}
       <p className="font-semibold text-slate-800 mt-4 text-[12px]">
-        Step 5 — Schedule-Aware Boost
+        Step 5 — Schedule Aware Boost
       </p>
 
       <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 my-2 space-y-1 font-mono text-[11px] text-indigo-900">
@@ -296,7 +296,7 @@ export default function ItemDashboard() {
             />
 
             {/* Task Processing Explanation */}
-            <div className="md:col-span-2 bg-slate-50 border border-slate-200 p-5 rounded-2xl">
+            <div className="md:col-span-2 bg-white border border-slate-300 p-5 rounded-2xl">
               <h4 className="text-slate-700 font-bold text-xs uppercase mb-2 tracking-wider">
                 Neural Input Architecture: 605 Dimensions
               </h4>
@@ -767,7 +767,7 @@ function PhaseHeader({ data, isExpanded, onToggle }) {
 
 function SignalExplainCard({ icon, title, dim, color, desc }) {
   return (
-    <div className="px-6 py-5 rounded-2xl bg-white border border-slate-100 shadow-sm flex gap-4 items-start">
+    <div className="px-6 py-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex gap-4 items-start">
       <div className="text-xl">{icon}</div>{" "}
       {/* Re-enabled icon for better visual context */}
       <div className="flex-1">

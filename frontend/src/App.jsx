@@ -25,7 +25,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/test-crud" element={<ItemDashboard />} />
 
-        <Route path="/masss/rl-dashboard" element={<RLDashboard/>} />
+        <Route path="/rl-dashboard" element={<RLDashboard/>} />
 
         <Route path="/masss/user/dashboard" element={<UserDashboard/>} />
 
