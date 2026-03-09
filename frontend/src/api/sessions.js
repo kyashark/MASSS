@@ -1,3 +1,5 @@
+// api/sessions.js
+
 import axiosClient from "./axiosClient";
 
 export const startSession = async (taskId) => {
@@ -6,7 +8,7 @@ export const startSession = async (taskId) => {
 };
 
 export const endSession = async (sessionId, data) => {
-  // data = { is_completed: boolean, focus_rating: int }
+  // data = { end_type: "COMPLETED|STOPPED|ABORTED", focus_rating?: int, extra_sessions?: int }
   const response = await axiosClient.post(`/sessions/${sessionId}/end`, data);
   return response.data;
 };

@@ -21,9 +21,10 @@ import {
 } from "lucide-react";
 
 import ModuleCard from "../../components/ModuleBentoCard.jsx";
-import ProfileCard from "../../components/StatsBentoCard.jsx";
+import ProfileCard from "../../components/StateBentoCard.jsx";
 import ScheduleCard from "../../components/ScheduleCard.jsx"; 
 import SessionCard from "../../components/SessionBentoCard.jsx";
+import ProfileBentoCard from "../../components/ProfileBentoCard.jsx";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -35,16 +36,13 @@ const Home = () => {
         onClick={() => navigate("/user/scheduling")}
         className="col-span-1 md:col-span-2 row-span-2 bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col relative overflow-hidden group hover:shadow-md transition-all cursor-pointer"
       >
-        <ArrowUpRight
-          className="absolute top-6 right-6 text-slate-900"
-          size={30}
-        />
+        
         <ScheduleCard />
       </div>
 
       {/*  BLOCK 5: stat  */}
       <div
-        onClick={() => navigate("/user/stat")}
+        onClick={() => navigate("/rl-dashboard")}
         className="md:col-span-2 bg-slate-900 rounded-3xl p-6 shadow-lg text-white 
            flex items-center gap-6 relative overflow-hidden group cursor-pointer
            hover:shadow-xl transition-all duration-300"
@@ -68,8 +66,8 @@ const Home = () => {
         />
         <div className="flex-1 w-full">
           <div className="flex items-center gap-3 mb-6">
-            <Clock size={24} className="text-white-700" />
-            <h2 className="text-xl font-semibold text-white-900">Focus Sessions</h2>
+            {/* <Clock size={24} className="text-white-700" /> */}
+            <h2 className="text-xl font-semibold text-white-900 pb-4"></h2>
           </div>
         <div className="rounded-xl border border-slate-800 bg-slate-800 p-4">
   <SessionCard />
@@ -88,8 +86,8 @@ const Home = () => {
 
         <div className="flex-1 w-full">
           <div className="flex items-center gap-3 mb-6">
-            <BookOpenText size={24} className="text-gray-700" />
-            <h2 className="text-xl font-semibold text-gray-900">Modules</h2>
+            {/* <BookOpenText size={24} className="text-gray-700" /> */}
+            <h2 className="text-[25px] font-[800] font-mono tracking-[-0.02em] text-[#0f172a] mt-1">Modules</h2>
           </div>
           <ModuleCard />
         </div>
@@ -106,10 +104,11 @@ const Home = () => {
         />
          <div className="flex-1 w-full">
           <div className="flex items-center gap-3 mb-6">
-            <Users size={24} className="text-gray-700" />
-            <h2 className="text-xl font-semibold text-gray-900">Study Profile</h2>
+            {/* <Users size={24} className="text-gray-700" /> */}
+            {/* <h2 className="text-xl font-semibold text-gray-900">Study Profile</h2> */}
           </div>
-         
+          
+          <ProfileBentoCard />
         </div>
       </div>
     </main>

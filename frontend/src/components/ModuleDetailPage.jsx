@@ -28,12 +28,6 @@ const ModuleDetailPage = ({ module, onBack }) => {
             <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-bold uppercase">
               {module.category || "General"}
             </span>
-            <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-bold uppercase">
-              Level {module.difficulty || 3}/5
-            </span>
-            <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-bold uppercase">
-              {module.priority || "Medium"}
-            </span>
           </div>
         </div>
       </div>

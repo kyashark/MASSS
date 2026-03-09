@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MoreHorizontal } from "lucide-react";
 
-// Priority color mapping
-const priorityConfig = {
-  High: { text: "text-red-600", bg: "bg-red-50", border: "border-red-200" },
-  Medium: { text: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
-  Low: { text: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
-};
+// 1. Define the missing colors object or logic
+  const colors = {
+    text: "bg-orange-900", // You can customize this or make it dynamic based on module.type
+  };
 
 const ModuleCard = ({ module, onClick, onEdit, onDelete }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -23,8 +21,6 @@ const ModuleCard = ({ module, onClick, onEdit, onDelete }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const priority = module.priority || "Low";
-  const colors = priorityConfig[priority] || priorityConfig.Low;
 
   return (
     <div
@@ -33,12 +29,7 @@ const ModuleCard = ({ module, onClick, onEdit, onDelete }) => {
     >
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
-        {/* Priority label */}
-        <div
-          className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text} border ${colors.border}`}
-        >
-          {priority}
-        </div>
+        <div></div>
 
         {/* Menu button */}
         <div ref={menuRef} className="relative">

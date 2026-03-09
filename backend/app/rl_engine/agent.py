@@ -1,62 +1,105 @@
-
-"""
-RL agent / trainer.
-
-Implements a standard Proximal Policy Optimization (PPO) algorithm.
-
-"""
 import os
 from datetime import datetime
 from stable_baselines3 import PPO
 from pathlib import Path
 from app.rl_engine.enviroment import StudentSchedulingEnv
 
-# Define where models live
-# MODEL_DIR = "/rl_models" # Adjust path if your structure is different
-
-
-# --- PATH SETUP ---
-# 1. Get location of this file (backend/app/rl_engine/agent.py)
 current_file = Path(__file__).resolve()
-
-# 2. Go up 3 levels to reach 'backend'
-#    .parent (rl_engine) -> .parent (app) -> .parent (backend)
 PROJECT_ROOT = current_file.parent.parent.parent
-
-# 3. Define the sibling folder
 MODEL_DIR = PROJECT_ROOT / "rl_models"
-
-# 4. Auto-create directory if missing
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 
-
 def train_agent():
-    # 1. Create Dummy Data (Use your Mock DB logic here)
-    dummy_tasks = [
-        {'id': i, 'priority': 'HIGH', 'difficulty': 5, 'category': 'Math'} 
-        for i in range(10)
+    dummy_tasks = []
+    for i in range(15):
+        if i < 4:
+            prio, diff, days, pomo, cat = "HIGH", 4, 2, 2, "Math/Logic"
+        elif i < 8:
+            prio, diff, days, pomo, cat = "MEDIUM", 3, 7, 2, "Coding"
+        elif i < 12:
+            prio, diff, days, pomo, cat = "LOW", 2, 20, 2, "Memorization"
+        else:
+            prio, diff, days, pomo, cat = "MEDIUM", 2, 14, 2, "Language"
+
+        dummy_tasks.append(
+            {
+                "id": i,
+                "name": f"Task {i}",
+                "priority": prio,
+                "difficulty": diff,
+                "category": cat,
+                "estimated_pomodoros": pomo,
+                "sessions_count": 0,
+                "days_until": days,
+                "status": "PENDING",
+            }
+        )
+
+    profiles = [
+        {  # Morning person
+            "work_intensity": 0.9,
+            "energy_map": {"Morning": 4.5, "Afternoon": 3.0, "Evening": 2.0},
+            "recent_ratings": [4, 5, 4, 3, 4],
+        },
+        {  # Afternoon person
+            "work_intensity": 0.5,
+            "energy_map": {"Morning": 2.5, "Afternoon": 4.5, "Evening": 3.0},
+            "recent_ratings": [3, 3, 4, 4, 3],
+        },
+        {  # Evening person
+            "work_intensity": 0.3,
+            "energy_map": {"Morning": 2.0, "Afternoon": 3.0, "Evening": 4.5},
+            "recent_ratings": [2, 3, 3, 4, 5],
+        },
+        {  # Morning person — post 9AM lecture
+            "work_intensity": 0.7,
+            "energy_map": {"Morning": 2.0, "Afternoon": 3.5, "Evening": 3.0},
+            "recent_ratings": [2, 2, 3, 3, 2],  # low — tired after class
+            "post_class_fatigue": 0.8,
+        },
+        {  # Afternoon person — post 2PM lab
+            "work_intensity": 0.9,
+            "energy_map": {"Morning": 3.0, "Afternoon": 1.5, "Evening": 4.0},
+            "recent_ratings": [3, 2, 2, 1, 2],
+            "post_class_fatigue": 0.9,
+        },
+        {  # Evening person — free morning
+            "work_intensity": 0.4,
+            "energy_map": {"Morning": 4.0, "Afternoon": 3.5, "Evening": 4.5},
+            "recent_ratings": [4, 5, 4, 4, 5],
+            "post_class_fatigue": 0.0,
+        },
     ]
-    dummy_profile = {}
 
-    # 2. Init Environment
-    env = StudentSchedulingEnv(dummy_profile, dummy_tasks)
-    
-    # 3. Create Model
-    model = PPO("MlpPolicy", env, verbose=1, learning_rate=0.0003,tensorboard_log="./rl_logs/")
-    
-    # 4. Train
-    print("Training RL Agent...")
-    model.learn(total_timesteps=50000)
+    for idx, profile in enumerate(profiles):
+        print(f"\n{'=' * 50}")
+        print(
+            f"Training profile {idx + 1}/{len(profiles)}: best_slot={max(profile['energy_map'], key=profile['energy_map'].get)}"
+        )
 
-    # 4. SAVE WITH TIMESTAMP
-    # Format: ppo_scheduler_YYYYMMDD_HHMMSS
+        env = StudentSchedulingEnv(profile, dummy_tasks)
+        print(f"Observation space: {env.observation_space.shape}")
+
+        if idx == 0:
+            model = PPO(
+                "MlpPolicy",
+                env,
+                verbose=1,
+                learning_rate=0.0003,
+                ent_coef=0.01,
+                tensorboard_log="./rl_logs/",
+            )
+        else:
+            model.set_env(env)
+
+        model.learn(total_timesteps=100000, reset_num_timesteps=(idx == 0))
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     save_path = os.path.join(MODEL_DIR, f"ppo_scheduler_{timestamp}")
-    
-    # 5. Save
     model.save(save_path)
-    print("Model Saved!")
+    print(f"\nModel saved: {save_path}")
+
 
 if __name__ == "__main__":
     train_agent()
