@@ -3,6 +3,7 @@ import './index.css';
 
 import UserDashboard from './pages/user/UserDashboard.jsx'; // Example
 import ItemDashboard from './pages/ItemDashboard.jsx';
+import RLDashboard from './pages/dashbaord/RLDashboard.jsx';
 
 
 // Layouts
@@ -23,6 +24,8 @@ function App() {
 
         {/* Public Routes */}
         <Route path="/test-crud" element={<ItemDashboard />} />
+
+        <Route path="/rl-dashboard" element={<RLDashboard/>} />
 
         <Route path="/masss/user/dashboard" element={<UserDashboard/>} />
 

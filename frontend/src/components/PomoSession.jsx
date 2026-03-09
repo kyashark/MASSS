@@ -1,8 +1,10 @@
+// components/PomoSession.jsx
+
 import React, { useState, useEffect } from "react";
 import { Play, Pause, Square, X, RotateCcw, FastForward, Armchair, Coffee } from "lucide-react";
 import { startSession, endSession } from "../api/sessions";
 import { updateTaskStatus } from "../api/tasks";
-import SessionSidebar from "./SessionSidebar";
+import SessionSidebar from "./SessionSideBar";
 import SessionFeedbackForm from "./SessionFeedbackForm";
 
 const PomoSession = ({ 
@@ -112,15 +114,21 @@ const PomoSession = ({
   const handleContinue = async (rating) => {
     setLoading(true);
     try {
-        await endSession(sessionId, {
-            is_completed: true,
-            focus_rating: rating,
-            end_type: "COMPLETED"
-        });
-        setCompletedSessions(prev => prev + 1);
-        setMode("BREAK_PROMPT"); 
-    } catch (err) { console.error(err); } 
-    finally { setLoading(false); }
+      // This triggers the backend 'Auto-Adjust Estimate' logic
+      await endSession(sessionId, {
+        end_type: "COMPLETED",
+        focus_rating: rating
+      });
+
+      setCompletedSessions(prev => prev + 1);
+      
+      // UI logic to show the break prompt
+      setMode("BREAK_PROMPT"); 
+    } catch (err) { 
+      console.error("End session error:", err); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   // 2. COMPLETE TASK 
@@ -157,24 +165,23 @@ const PomoSession = ({
   const handleDiscard = async () => {
     setLoading(true);
     try {
-        // Mark session as aborted in DB
-        if (sessionId) {
-            await endSession(sessionId, { end_type: "ABORTED" });
-        }
-        
-        // Reset status logic (maintain history)
-        const newStatus = completedSessions > 0 ? "IN_PROGRESS" : "PENDING";
-        await updateTaskStatus(task.id, newStatus);
-        if (onUpdateTask) onUpdateTask();
-
-        // RESET STATE TO LOBBY
-        setSessionId(null);
-        setSeconds(0);
-        setMode("LOBBY"); // <--- This sends you back to "Start Session" screen
-    } catch (err) { 
-        console.error(err); 
+      if (sessionId) {
+        // No extra_sessions field here anymore
+        await endSession(sessionId, { end_type: "ABORTED", focus_rating: 1 });
+      }
+      
+      // If sessions were completed before, keep it IN_PROGRESS, else PENDING
+      const newStatus = completedSessions > 0 ? "IN_PROGRESS" : "PENDING";
+      await updateTaskStatus(task.id, newStatus);
+      
+      if (onUpdateTask) onUpdateTask();
+      setSessionId(null);
+      setSeconds(0);
+      setMode("LOBBY");
+    } catch (err) {
+      console.error(err);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 

@@ -1,8 +1,10 @@
+// components/SessionSideBar.jsx
+
 import React from "react";
 import { Check, Clock } from "lucide-react";
 
 const SessionSidebar = ({ totalSessions, currentSessionNum, mode }) => {
-  
+  const displayTotal = Math.max(totalSessions, currentSessionNum);
   // --- 1. Calculate Total Work Time (Excluding Breaks) ---
   // Assuming currentSessionNum is 1-based. If we are in session 2, 1 is fully done.
   // If we are currently IN session 2, we don't count it as full yet for the "Total Time" at top,
@@ -16,17 +18,17 @@ const SessionSidebar = ({ totalSessions, currentSessionNum, mode }) => {
   // We build an array representing the linear flow: Work -> Break -> Work...
   const timelineSteps = [];
 
-  for (let i = 1; i <= totalSessions; i++) {
-    // A. Add Work Session
+  for (let i = 1; i <= displayTotal; i++) { // Use displayTotal here
     timelineSteps.push({
+
       type: "WORK",
       index: i,
-      label: "Focus Session",
+      label: i > totalSessions ? "Extra Focus" : "Focus Session",
       time: "25 min"
     });
 
     // B. Add Break (if not the last session)
-    if (i < totalSessions) {
+    if (i < displayTotal) {
       const isLongBreak = i % 4 === 0;
       timelineSteps.push({
         type: isLongBreak ? "LONG_BREAK" : "SHORT_BREAK",

@@ -1,3 +1,5 @@
+// components/SessionFeedbackForm.jsx
+
 import React, { useState } from 'react';
 import { Star, CheckCircle, Play, Pause, Trash2, X } from 'lucide-react';
 
@@ -9,6 +11,8 @@ const SessionFeedbackForm = ({
 }) => {
   const [rating, setRating] = useState(0);
   const [error, setError] = useState('');
+  const [extraSessions, setExtraSessions] = useState(0); // New State for "Continue" option
+  
 
   // Helper to validate rating before action
   const handleAction = (actionCallback) => {
@@ -16,7 +20,7 @@ const SessionFeedbackForm = ({
       setError('Please rate your focus first.');
       return;
     }
-    actionCallback(rating);
+    actionCallback(rating, extraSessions); // Pass rating and extra sessions to parent
   };
 
   return (
