@@ -48,7 +48,6 @@ def start_session(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    # 1. Verify Task
     task = (
         db.query(Task)
         .filter(Task.id == payload.task_id, Task.user_id == current_user.id)
@@ -58,12 +57,16 @@ def start_session(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # 2. Sticky Logic: Mark Task as IN_PROGRESS immediately
     if task.status == TaskStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Task already completed")
 
-    # 3. Create Session Log
     now = get_sl_time()
+
+    # Mark task as IN_PROGRESS so the RL momentum signal fires
+    # and the heuristic sticky rule works correctly
+    if task.status != TaskStatus.IN_PROGRESS:
+        task.status = TaskStatus.IN_PROGRESS
+        db.add(task)
 
     new_session = PomodoroSession(
         task_id=payload.task_id,
