@@ -399,7 +399,12 @@ class UserAnalyticsService:
             .group_by(Module.category)
             .all()
         )
-        return {r.category: (r.wins / r.total) if r.total > 0 else 0.5 for r in stats}
+        return {
+            (r.category.value if hasattr(r.category, "value") else str(r.category)): (
+                r.wins / r.total if r.total > 0 else 0.5
+            )
+            for r in stats
+        }
 
     def _calculate_slot_cognitive_fatigue(
         self, slot_name: str, start: int, end: int
