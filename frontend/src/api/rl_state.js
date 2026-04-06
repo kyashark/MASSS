@@ -1,6 +1,7 @@
 import axiosClient from "./axiosClient";
-
-// Temporary user ID — will be replaced when real auth is added in Phase 1 Area 2
+// TODO Area 2 follow-up: RL routers still use path param user_id
+// These will be updated when RL routers get proper auth dependency
+// For now the token in the header identifies the user on other endpoints
 const TEMP_USER_ID = 1;
 
 export const fetchStateVector = async (activeSlot = "Morning") => {
