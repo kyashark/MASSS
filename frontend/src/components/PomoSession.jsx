@@ -83,19 +83,23 @@ const PomoSession = ({
 
   // --- TIMER EFFECT ---
   useEffect(() => {
-    let interval = null;
-    if (mode === "RUNNING" || mode === "BREAK") {
-      interval = setInterval(() => {
-        setSeconds((s) => s + 1);
-        
-        // Auto-stop work timer
-        if (mode === "RUNNING" && seconds >= workDuration) {
-           setMode("FEEDBACK");
+    if (mode !== "RUNNING" && mode !== "BREAK") return;
+
+    const interval = setInterval(() => {
+      setSeconds((prev) => {
+        const next = prev + 1;
+
+        // Auto-stop: check inside the setter so we always have the real value
+        if (mode === "RUNNING" && next >= workDuration) {
+          setMode("FEEDBACK");
         }
-      }, 1000);
-    }
+
+        return next;
+      });
+    }, 1000);
+
     return () => clearInterval(interval);
-  }, [mode, seconds]);
+  }, [mode]);
 
   const formatTime = (totalSeconds) => {
     const m = Math.floor(totalSeconds / 60).toString().padStart(2, "0");

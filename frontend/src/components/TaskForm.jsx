@@ -1,7 +1,7 @@
 // components/TaskForm.jsx
 import React, { useState, useEffect } from "react";
 import { X, Calendar, Clock, BookOpen, BarChart } from "lucide-react"; // Added BarChart icon
-import { createTask, updateTask } from "../api/tasks"; 
+import { createTask, updateTask } from "../api/tasks";
 import { fetchExamsByModule } from "../api/exams";
 
 const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
@@ -33,7 +33,9 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
           estimated_pomodoros: taskToEdit.estimated_pomodoros || 1,
           priority: taskToEdit.priority || "Medium",
           difficulty: taskToEdit.difficulty || 3, // Populate difficulty
-          deadline: taskToEdit.deadline ? new Date(taskToEdit.deadline).toISOString().slice(0, 16) : "",
+          deadline: taskToEdit.deadline
+            ? new Date(taskToEdit.deadline).toISOString().slice(0, 16)
+            : "",
           is_fixed: taskToEdit.is_fixed || false,
           exam_id: taskToEdit.exam_id || "",
         });
@@ -63,9 +65,11 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
         ...formData,
         module_id: moduleId,
         exam_id: formData.exam_id ? parseInt(formData.exam_id) : null,
-        deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
+        deadline: formData.deadline
+          ? new Date(formData.deadline).toISOString()
+          : null,
+        priority: formData.priority.toUpperCase(),
       };
-
       let result;
       if (taskToEdit) {
         result = await updateTask(taskToEdit.id, payload);
@@ -90,7 +94,10 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
           <h3 className="font-bold text-lg text-gray-800">
             {taskToEdit ? "Edit Task" : "Add New Task"}
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full">
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-200 rounded-full"
+          >
             <X size={20} className="text-gray-500" />
           </button>
         </div>
@@ -98,23 +105,31 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Task Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Task Name
+            </label>
             <input
               required
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Details (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Details (Optional)
+            </label>
             <textarea
               rows="2"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             />
           </div>
@@ -126,7 +141,9 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
             </label>
             <select
               value={formData.exam_id}
-              onChange={(e) => setFormData({ ...formData, exam_id: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, exam_id: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none bg-white"
             >
               <option value="">-- No Exam --</option>
@@ -144,13 +161,17 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
               <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
                 <BarChart size={14} /> Difficulty
               </label>
-              <span className="text-xs font-semibold text-gray-500">Level {formData.difficulty}</span>
+              <span className="text-xs font-semibold text-gray-500">
+                Level {formData.difficulty}
+              </span>
             </div>
             <div className="flex space-x-1.5 mt-1">
               {[1, 2, 3, 4, 5].map((level) => (
                 <div
                   key={level}
-                  onClick={() => setFormData({ ...formData, difficulty: level })}
+                  onClick={() =>
+                    setFormData({ ...formData, difficulty: level })
+                  }
                   className={`flex-1 h-3 cursor-pointer rounded-full transition-all duration-200 ${
                     formData.difficulty >= level
                       ? "bg-slate-700"
@@ -164,10 +185,14 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
           <div className="grid grid-cols-2 gap-4">
             {/* Priority */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Priority
+              </label>
               <select
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, priority: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
               >
                 <option value="Low">Low</option>
@@ -186,7 +211,12 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
                 min="1"
                 max="10"
                 value={formData.estimated_pomodoros}
-                onChange={(e) => setFormData({ ...formData, estimated_pomodoros: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    estimated_pomodoros: parseInt(e.target.value),
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
               />
             </div>
@@ -200,7 +230,9 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
             <input
               type="datetime-local"
               value={formData.deadline}
-              onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, deadline: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm"
             />
           </div>
@@ -219,7 +251,11 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
               disabled={loading}
               className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              {loading ? "Saving..." : taskToEdit ? "Update Task" : "Create Task"}
+              {loading
+                ? "Saving..."
+                : taskToEdit
+                  ? "Update Task"
+                  : "Create Task"}
             </button>
           </div>
         </form>

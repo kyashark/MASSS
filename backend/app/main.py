@@ -3,12 +3,11 @@ from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 
 # 1. Import Core Database Setup
-from app.core.database import engine
+from app.core.database import engine, Base
 from app.core import base
 
 # 2. Import Your Module Routers
 # from app.modules.scheduling.router import router as scheduling_router
-from app.modules.test_crud.router import router as test_crud_router
 from app.routers import (
     module_router,
     exam_router,
@@ -27,7 +26,7 @@ from app.routers.stats import router as stats_router
 
 
 # Ensure tables exist (Good for development, safer to leave it)
-base.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="MASSS - Smart Scheduler")
 
@@ -69,9 +68,6 @@ app.include_router(rl_bridge_router, prefix="/api")
 app.include_router(rl_policy_router, prefix="/api")
 app.include_router(rl_gap_router, prefix="/api")
 app.include_router(stats_router, prefix="/api/stats")
-
-# --- Basic Health Check Endpoint ---
-app.include_router(test_crud_router, prefix="/api/test-crud", tags=["Test CRUD"])
 
 
 @app.get("/")
