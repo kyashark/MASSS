@@ -1,36 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-
-from app.core.database import SessionLocal
+from app.core.database import get_db
 from app.models.exam import Exam
 from app.models.module import Module
 from app.schemas.exam import ExamCreate, ExamUpdate, ExamResponse
-from app.dependencies.auth import get_current_user # Assuming standard auth
+from app.dependencies.auth import get_current_user  # Assuming standard auth
 
 router = APIRouter(prefix="/exams", tags=["Exams"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # CREATE (Add Exam to a Module)
-@router.post("/module/{module_id}", response_model=ExamResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/module/{module_id}",
+    response_model=ExamResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def add_exam(
     module_id: int,
     payload: ExamCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     # 1. Verify Module exists and belongs to user
-    module = db.query(Module).filter(
-        Module.id == module_id, 
-        Module.user_id == current_user.id
-    ).first()
-    
+    module = (
+        db.query(Module)
+        .filter(Module.id == module_id, Module.user_id == current_user.id)
+        .first()
+    )
+
     if not module:
         raise HTTPException(status_code=404, detail="Module not found")
 
@@ -41,9 +39,9 @@ def add_exam(
         name=payload.name,
         exam_type=payload.exam_type,
         due_date=payload.due_date,
-        weight=payload.weight
+        weight=payload.weight,
     )
-    
+
     db.add(new_exam)
     db.commit()
     db.refresh(new_exam)
@@ -55,28 +53,28 @@ def add_exam(
 def get_exams_by_module(
     module_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     # Verify module ownership implicitly by filtering exams by user_id
-    exams = db.query(Exam).filter(
-        Exam.module_id == module_id,
-        Exam.user_id == current_user.id
-    ).all()
+    exams = (
+        db.query(Exam)
+        .filter(Exam.module_id == module_id, Exam.user_id == current_user.id)
+        .all()
+    )
     return exams
 
 
 # READ ONE
 @router.get("/{exam_id}", response_model=ExamResponse)
 def get_exam(
-    exam_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    exam_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
-    exam = db.query(Exam).filter(
-        Exam.id == exam_id,
-        Exam.user_id == current_user.id
-    ).first()
-    
+    exam = (
+        db.query(Exam)
+        .filter(Exam.id == exam_id, Exam.user_id == current_user.id)
+        .first()
+    )
+
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
     return exam
@@ -88,13 +86,14 @@ def update_exam(
     exam_id: int,
     payload: ExamUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    exam = db.query(Exam).filter(
-        Exam.id == exam_id,
-        Exam.user_id == current_user.id
-    ).first()
-    
+    exam = (
+        db.query(Exam)
+        .filter(Exam.id == exam_id, Exam.user_id == current_user.id)
+        .first()
+    )
+
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
 
@@ -116,15 +115,14 @@ def update_exam(
 # DELETE
 @router.delete("/{exam_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_exam(
-    exam_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    exam_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
-    exam = db.query(Exam).filter(
-        Exam.id == exam_id,
-        Exam.user_id == current_user.id
-    ).first()
-    
+    exam = (
+        db.query(Exam)
+        .filter(Exam.id == exam_id, Exam.user_id == current_user.id)
+        .first()
+    )
+
     if not exam:
         raise HTTPException(status_code=404, detail="Exam not found")
 

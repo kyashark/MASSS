@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from app.core.database import SessionLocal
+from app.core.database import get_db
 from app.models.session import PomodoroSession, SessionEndType, get_sl_time
 from app.models.task import Task, TaskStatus
 from app.schemas import session as schemas
@@ -15,12 +15,6 @@ router = APIRouter(prefix="/sessions", tags=["Pomodoro Sessions"])
 # -----------------------------
 # DB Dependency
 # -----------------------------
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # -----------------------------
