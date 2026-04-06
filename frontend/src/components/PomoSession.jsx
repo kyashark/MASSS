@@ -48,17 +48,15 @@ const PomoSession = ({
 
   // --- ACTIONS ---
 
-  const handleStart = async () => {
+ const handleStart = async () => {
     if (isStarting) return;
     setIsStarting(true);
     try {
+      // The backend should handle setting the task to IN_PROGRESS 
+      // when a session is created.
       const session = await startSession(task.id);
       setSessionId(session.id);
       setMode("RUNNING");
-      // Only set to IN_PROGRESS if not already (avoids unneccesary API calls)
-      if (task.status !== "IN_PROGRESS") {
-        await updateTaskStatus(task.id, "IN_PROGRESS");
-      }
     } catch (err) {
       alert("Failed to start session.");
     } finally {
