@@ -24,6 +24,9 @@ from app.routers.rl_policy import router as rl_policy_router
 from app.routers.rl_gap import router as rl_gap_router
 from app.routers.stats import router as stats_router
 
+# Auth
+from app.routers.auth import router as auth_router
+
 
 # Ensure tables exist (Good for development, safer to leave it)
 Base.metadata.create_all(bind=engine)
@@ -51,6 +54,9 @@ app.add_middleware(
 #     prefix="/api/scheduling",
 #     tags=["Scheduling"]
 # )
+
+# Auth Router
+app.include_router(auth_router, prefix="/api")
 
 app.include_router(module_router, prefix="/api")
 app.include_router(exam_router, prefix="/api")

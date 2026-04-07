@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
+from app.core.database import get_db
 from app.schemas.schedule import ScheduleResponse
 from app.dependencies.auth import get_current_user
 
@@ -9,14 +9,6 @@ from app.services.scheduling import SchedulingService as HeuristicService
 from app.services.rl_scheduling import RLService
 
 router = APIRouter(prefix="/schedule", tags=["AI Scheduler"])
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # --- ENDPOINT 1: THE HEURISTIC (Baseline) ---

@@ -7,27 +7,28 @@ const axiosClient = axios.create({
   },
 });
 
-//  Inject user_id=1 automatically
+// Inject the JWT token into every request automatically
 axiosClient.interceptors.request.use((config) => {
-  const userId = 1; // TEMP until auth exists
-
-  // For GET requests → query params
-  if (config.method === "get") {
-    config.params = {
-      ...(config.params || {}),
-      user_id: userId,
-    };
+  const token = localStorage.getItem("access_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-
-  // For POST / PUT / PATCH → body
-  if (["post", "put", "patch"].includes(config.method)) {
-    config.data = {
-      ...(config.data || {}),
-      user_id: userId,
-    };
-  }
-
   return config;
 });
+
+// Handle 401 responses globally — token expired or invalid
+axiosClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear the invalid token
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      // Redirect to login
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default axiosClient;

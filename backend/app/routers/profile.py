@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.core.database import SessionLocal
+from app.core.database import get_db
 from app.models.profile import WeeklyRoutine, SlotPreference, Chronotype
 from app.schemas.profile import (
     RoutineCreate,
@@ -14,14 +14,6 @@ from app.schemas.profile import (
 from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/profile", tags=["Student Profile"])
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # --- ROUTINE MANAGEMENT ---

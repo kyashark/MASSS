@@ -2,21 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from app.core.database import SessionLocal
+from app.core.database import get_db
 from app.models.task import Task, TaskStatus, PriorityLevel
 from app.models.module import Module
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
