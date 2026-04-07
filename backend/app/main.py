@@ -28,9 +28,6 @@ from app.routers.stats import router as stats_router
 from app.routers.auth import router as auth_router
 
 
-# Ensure tables exist (Good for development, safer to leave it)
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="MASSS - Smart Scheduler")
 
 # Allow your frontend origin
