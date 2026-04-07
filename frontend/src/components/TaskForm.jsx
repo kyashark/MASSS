@@ -68,7 +68,6 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
         deadline: formData.deadline
           ? new Date(formData.deadline).toISOString()
           : null,
-        priority: formData.priority.toUpperCase(),
       };
       let result;
       if (taskToEdit) {
