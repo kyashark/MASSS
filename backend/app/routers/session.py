@@ -13,11 +13,6 @@ router = APIRouter(prefix="/sessions", tags=["Pomodoro Sessions"])
 
 
 # -----------------------------
-# DB Dependency
-# -----------------------------
-
-
-# -----------------------------
 # Helper: Auto Slot Detection
 # -----------------------------
 def get_slot_name(current_time: datetime) -> str:

@@ -55,7 +55,7 @@ app.add_middleware(
 #     tags=["Scheduling"]
 # )
 
-# Auth Routerapp.include_router(auth_router)
+# Auth Router
 app.include_router(auth_router, prefix="/api")
 
 app.include_router(module_router, prefix="/api")
