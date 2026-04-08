@@ -4,7 +4,7 @@ import os
 import glob
 from stable_baselines3 import PPO
 from pathlib import Path
-from app.engine.enviroment import StudentSchedulingEnv
+from app.engine.environment import StudentSchedulingEnv
 
 
 from app.core.config import settings

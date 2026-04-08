@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from stable_baselines3 import PPO
 from pathlib import Path
-from app.engine.enviroment import StudentSchedulingEnv
+from app.engine.environment import StudentSchedulingEnv
 
 current_file = Path(__file__).resolve()
 PROJECT_ROOT = current_file.parent.parent.parent
