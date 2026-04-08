@@ -4,6 +4,7 @@ from app.core.config import settings
 
 def verify_service_key(x_service_key: str = Header(...)) -> None:
     """
+
     Dependency that verifies the service-to-service secret key.
     Used on all endpoints except /health.
 
