@@ -90,3 +90,20 @@ def get_dashboard_stats(
         if recent_ratings
         else 0,
     }
+
+
+@router.get("/health")
+def get_system_health(current_user=Depends(get_current_user)):
+    """
+    Returns health status of the main backend and RL service.
+    Useful for debugging and monitoring.
+    """
+    from app.services.rl_client import check_rl_health
+
+    rl_status = check_rl_health()
+
+    return {
+        "main_api": "ok",
+        "rl_service": rl_status.get("status", "unreachable"),
+        "rl_model_loaded": rl_status.get("model_loaded", False),
+    }
