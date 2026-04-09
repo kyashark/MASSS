@@ -4,10 +4,10 @@ from stable_baselines3 import PPO
 from pathlib import Path
 from app.engine.environment import StudentSchedulingEnv
 
-current_file = Path(__file__).resolve()
-PROJECT_ROOT = current_file.parent.parent.parent
-MODEL_DIR = PROJECT_ROOT / "rl_models"
-os.makedirs(MODEL_DIR, exist_ok=True)
+
+from app.core.config import settings
+
+MODEL_DIR = Path(settings.MODEL_DIR)
 
 
 def train_agent():
