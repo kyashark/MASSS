@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../api/auth";
+import axiosClient from "../api/axiosClient";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const Login = () => {
     password: "",
   });
 
+  // Replace the navigate("/user/home") after login with this:
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -22,16 +25,22 @@ const Login = () => {
     try {
       if (isRegister) {
         await registerUser(form.username, form.email, form.password);
-        // After register, log them in automatically
         await loginUser(form.email, form.password);
       } else {
         await loginUser(form.email, form.password);
       }
-      // Redirect to home after successful login
-      navigate("/user/home");
+
+      // Check if user has completed onboarding
+      const status = await axiosClient.get("/onboarding/status");
+
+      if (status.data.onboarding_completed) {
+        navigate("/user/home");
+      } else {
+        navigate("/onboarding");
+      }
     } catch (err) {
       setError(
-        err.response?.data?.detail || "Something went wrong. Please try again."
+        err.response?.data?.detail || "Something went wrong. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -41,7 +50,6 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-sm border border-gray-100 p-8">
-        
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-gray-900 rounded-xl flex items-center justify-center mx-auto mb-4">
@@ -62,7 +70,6 @@ const Login = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          
           {/* Username — only shown on register */}
           {isRegister && (
             <div>
@@ -120,8 +127,8 @@ const Login = () => {
             {loading
               ? "Please wait..."
               : isRegister
-              ? "Create Account"
-              : "Sign In"}
+                ? "Create Account"
+                : "Sign In"}
           </button>
         </form>
 
@@ -129,7 +136,10 @@ const Login = () => {
         <p className="text-center text-sm text-gray-500 mt-6">
           {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
           <button
-            onClick={() => { setIsRegister(!isRegister); setError(""); }}
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setError("");
+            }}
             className="text-gray-900 font-medium hover:underline"
           >
             {isRegister ? "Sign in" : "Create one"}
