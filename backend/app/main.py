@@ -16,6 +16,8 @@ from app.routers import (
 from app.routers.rl_state import router as rl_state_router
 from app.routers.stats import router as stats_router
 from app.routers.auth import router as auth_router
+from app.routers.onboarding import router as onboarding_router
+
 
 app = FastAPI(title="MASSS - Smart Scheduler API")
 
@@ -42,6 +44,7 @@ app.include_router(profile_router, prefix="/api")
 app.include_router(schedule_router, prefix="/api")
 app.include_router(rl_state_router, prefix="/api")
 app.include_router(stats_router, prefix="/api/stats")
+app.include_router(onboarding_router, prefix="/api")
 
 
 @app.get("/")
