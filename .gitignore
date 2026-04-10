@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual Environment
+venv/
+.env/
+.env.*
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# PyCharm (optional)
+.idea/
+
+# Testing / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# mypy / type checking
+.mypy_cache/
+
+# dotenv
+.env
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Alembic (keep migrations if needed)
+alembic/versions/__pycache__/
+
+# Node (if frontend exists)
+node_modules/
