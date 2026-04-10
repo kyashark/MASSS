@@ -29,6 +29,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    onboarding_completed: bool
 
     class Config:
         from_attributes = True
