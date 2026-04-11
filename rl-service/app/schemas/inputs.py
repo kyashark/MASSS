@@ -33,7 +33,7 @@ class TaskInput(BaseModel):
     category: str
     estimated_pomodoros: int
     sessions_count: int
-    days_until_deadline: Optional[int] = None
+    days_until: Optional[int] = None
     status: str = "PENDING"
 
     @field_validator("priority")

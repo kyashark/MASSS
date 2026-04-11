@@ -56,6 +56,7 @@ def _fetch_tasks(user_id: int, db: Session) -> list:
     for task in tasks:
         # Resolve days until deadline
         # Check task.deadline first, then exam.due_date
+
         days_until = None
 
         if task.deadline:
@@ -87,6 +88,10 @@ def _fetch_tasks(user_id: int, db: Session) -> list:
             status = status.value
         status = str(status)
 
+        print(
+            f"[DEBUG] Task {task.id} priority raw={task.priority} normalized={priority}"
+        )
+
         result.append(
             {
                 "id": task.id,
@@ -96,7 +101,7 @@ def _fetch_tasks(user_id: int, db: Session) -> list:
                 "category": category,
                 "estimated_pomodoros": task.estimated_pomodoros or 1,
                 "sessions_count": task.sessions_count or 0,
-                "days_until_deadline": days_until,
+                "days_until": days_until,
                 "status": status,
             }
         )
