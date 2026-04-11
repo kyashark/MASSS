@@ -7,7 +7,6 @@ from app.engine.predictor import RLScheduler
 
 router = APIRouter()
 
-# Load model once when service starts — not on every request
 rl_brain = RLScheduler()
 
 
@@ -17,12 +16,6 @@ rl_brain = RLScheduler()
     dependencies=[Depends(verify_service_key)],
 )
 def generate_schedule(request: ScheduleRequest):
-    """
-    Generate a daily schedule for a student.
-    Receives all context data from the caller.
-    Falls back to empty schedule if model not loaded.
-    """
-    # Convert Pydantic models to plain dicts for the engine
     tasks = [t.model_dump() for t in request.tasks]
     sessions = [s.model_dump() for s in request.session_history]
     preferences = [p.model_dump() for p in request.slot_preferences]
@@ -46,6 +39,7 @@ def generate_schedule(request: ScheduleRequest):
 
     if rl_brain.model_loaded:
         flat_schedule = rl_brain.predict(context, tasks)
+
         if flat_schedule:
             for item in flat_schedule:
                 slot = item.get("slot", "Morning")
@@ -59,5 +53,34 @@ def generate_schedule(request: ScheduleRequest):
                         }
                     )
             result["strategy_used"] = "RL_PPO"
+
+    # ── Sticky Rule ───────────────────────────────────────────────────────────
+    # IN_PROGRESS tasks the model missed must always appear in the schedule.
+    # The RL agent learned momentum (+5.0 reward) but with few tasks it often
+    # picks invalid indices and misses them entirely.
+    # Find the best energy slot to insert them.
+    scheduled_ids = {
+        item["task_id"]
+        for slot_list in [result["Morning"], result["Afternoon"], result["Evening"]]
+        for item in slot_list
+    }
+
+    energy_map = context.get("energy_map", {})
+    best_slot = max(energy_map, key=energy_map.get) if energy_map else "Morning"
+
+    for task in tasks:
+        if task.get("status") == "IN_PROGRESS" and task["id"] not in scheduled_ids:
+            result[best_slot].insert(
+                0,
+                {
+                    "task_id": task["id"],
+                    "task_name": task["name"],
+                    "slot": best_slot,
+                    "allocation_type": "STICKY_RULE",
+                },
+            )
+            # Mark strategy as RL_PPO since at least one task is scheduled
+            if result["strategy_used"] == "HEURISTIC_FALLBACK":
+                result["strategy_used"] = "RL_PPO"
 
     return result

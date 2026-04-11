@@ -52,6 +52,11 @@ class RLScheduler:
         done = False
         raw_schedule = []
 
+        # Track consecutive invalid actions
+        # If the model keeps picking invalid indices, stop early
+        invalid_streak = 0
+        MAX_INVALID_STREAK = 15
+
         # 2. Decision Loop (Agent simulates the day)
         while not done:
             # deterministic=True ensures the AI makes the highest-probability choice
@@ -60,7 +65,15 @@ class RLScheduler:
 
             # Only record if the action was valid (slot not full, task exists)
             if not info.get("valid", False):
+                invalid_streak += 1
+                if invalid_streak >= MAX_INVALID_STREAK:
+                    # Model is stuck picking invalid actions
+                    # Break early rather than wasting all 30 steps
+                    break
                 continue
+
+            # Reset streak on valid action
+            invalid_streak = 0
 
             task_idx, slot_idx = action
 
