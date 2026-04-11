@@ -21,7 +21,11 @@ class RewardEngine:
             if deadline is not None:
                 return (deadline - datetime.now()).days
             return 30
-        return task.get("days_until", 10)
+        days = task.get("days_until", 10)
+        # Explicitly null means no deadline — treat as 30 days
+        if days is None:
+            return 30
+        return days
 
     def calculate_reward(
         self,
