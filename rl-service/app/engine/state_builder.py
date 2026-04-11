@@ -80,18 +80,19 @@ class StateBuilder:
             )
 
             # Use shared helper — checks task.deadline first, then task.exam.due_date
+
             deadline_val = (
-                get_effective_deadline(task)
-                if not isinstance(task, dict)
-                else (
-                    None  # training dict — fall through to days_until
-                )
+                get_effective_deadline(task) if not isinstance(task, dict) else None
             )
             if deadline_val is not None:
                 days = (deadline_val - datetime.now()).days
             else:
                 days = self._safe_get(task, "days_until", 30)
-            # No deadline anywhere → days=30 → urgency dim = 0.0 (neutral)
+
+            # Guard against None — treat missing deadline as 30 days (neutral urgency)
+            if days is None:
+                days = 30
+
             task_matrix[i, 3] = max(
                 0, (self.cfg.MAX_DAYS_DUE - max(0, days)) / self.cfg.MAX_DAYS_DUE
             )
