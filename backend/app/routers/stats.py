@@ -8,7 +8,7 @@ from app.models.session import PomodoroSession, SessionEndType
 from app.models.task import Task
 from app.dependencies.auth import get_current_user
 
-router = APIRouter(prefix="/api/stats", tags=["stats"])
+router = APIRouter(prefix="/stats", tags=["stats"])
 
 
 @router.get("/dashboard-summary")
