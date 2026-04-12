@@ -109,10 +109,9 @@ def _fetch_session_history(user_id: int, db: Session) -> list:
             s.end_type.value
             if hasattr(s.end_type, "value")
             else str(s.end_type or "aborted")
-        )
-        slot_type = s.slot_type or "morning"
-        if hasattr(slot_type, "value"):
-            slot_type = slot_type.value
+        ).lower()
+
+        slot_type = (s.slot_type or "morning").lower()
 
         result.append(
             {

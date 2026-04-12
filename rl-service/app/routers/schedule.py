@@ -21,6 +21,18 @@ def generate_schedule(request: ScheduleRequest):
     preferences = [p.model_dump() for p in request.slot_preferences]
     routine = [r.model_dump() for r in request.weekly_routine]
 
+    print(
+        "[rl.schedule] request",
+        {
+            "active_slot": request.active_slot,
+            "tasks": len(tasks),
+            "sessions": len(sessions),
+            "preferences": len(preferences),
+            "routine": len(routine),
+            "model_loaded": rl_brain.model_loaded,
+        },
+    )
+
     analytics = UserAnalyticsService(
         session_history=sessions,
         slot_preferences=preferences,
@@ -30,29 +42,65 @@ def generate_schedule(request: ScheduleRequest):
     context = analytics.build_rl_context()
 
     result = {
-        "Morning": [],
-        "Afternoon": [],
-        "Evening": [],
-        "strategy_used": "HEURISTIC_FALLBACK",
+        "morning": [],
+        "afternoon": [],
+        "evening": [],
+        "strategy_used": "heuristic_fallback",
         "work_intensity": context.get("work_intensity", 0.0),
     }
 
     if rl_brain.model_loaded:
         flat_schedule = rl_brain.predict(context, tasks)
 
+        print("[rl.schedule] predicted", {"items": len(flat_schedule)})
+
         if flat_schedule:
             for item in flat_schedule:
-                slot = item.get("slot", "Morning")
+                slot = item.get("slot", "morning")  # now lowercase from predictor
                 if slot in result:
                     result[slot].append(
                         {
                             "task_id": item["task_id"],
                             "task_name": item["task_name"],
                             "slot": slot,
-                            "allocation_type": "RL_DECISION",
+                            "allocation_type": "rl_decision",
                         }
                     )
-            result["strategy_used"] = "RL_PPO"
+            result["strategy_used"] = "rl_ppo"
+        else:
+            # ── HEURISTIC FALLBACK (RL returned empty) ──
+            energy_map = context.get("energy_map", {})
+            best_slot = max(energy_map, key=energy_map.get) if energy_map else "morning"
+
+            priority_order = {"high": 0, "medium": 1, "low": 2}
+
+            sorted_tasks = sorted(
+                tasks,
+                key=lambda t: (
+                    priority_order.get(str(t.get("priority", "low")).lower(), 2),
+                    t.get("days_until", 30) or 30,
+                ),
+            )
+
+            capacity = context.get("capacity_map", {}).get(best_slot, 4)
+            scheduled_count = 0
+
+            for task in sorted_tasks:
+                if scheduled_count >= capacity:
+                    break
+
+                result[best_slot].append(
+                    {
+                        "task_id": task["id"],
+                        "task_name": task["name"],
+                        "slot": best_slot,
+                        "allocation_type": "priority_fallback",
+                    }
+                )
+                scheduled_count += 1
+
+            if result[best_slot]:
+                result["strategy_used"] = "priority_fallback"
 
     # ── Sticky Rule ───────────────────────────────────────────────────────────
     # IN_PROGRESS tasks the model missed must always appear in the schedule.
@@ -61,31 +109,25 @@ def generate_schedule(request: ScheduleRequest):
     # Find the best energy slot to insert them.
     scheduled_ids = {
         item["task_id"]
-        for slot_list in [result["Morning"], result["Afternoon"], result["Evening"]]
+        for slot_list in [result["morning"], result["afternoon"], result["evening"]]
         for item in slot_list
     }
 
     energy_map = context.get("energy_map", {})
-    best_slot = (
-        max(energy_map, key=energy_map.get) if energy_map else "morning"
-    )  # ← lowercase
+    best_slot = max(energy_map, key=energy_map.get) if energy_map else "morning"
 
     for task in tasks:
-        if (
-            task.get("status") == "in_progress"  # ← lowercase
-            and task["id"] not in scheduled_ids
-        ):
+        if task.get("status") == "in_progress" and task["id"] not in scheduled_ids:
             result[best_slot].insert(
                 0,
                 {
                     "task_id": task["id"],
                     "task_name": task["name"],
                     "slot": best_slot,
-                    "allocation_type": "sticky_rule",  # ← lowercase
+                    "allocation_type": "sticky_rule",
                 },
             )
-            # Mark strategy as RL_PPO since at least one task is scheduled
-            if result["strategy_used"] == "HEURISTIC_FALLBACK":
-                result["strategy_used"] = "RL_PPO"
+            if result["strategy_used"] == "heuristic_fallback":
+                result["strategy_used"] = "rl_ppo"
 
     return result

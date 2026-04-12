@@ -20,20 +20,14 @@ from app.engine.config import RLConfig
 
 
 def get_effective_deadline(task: dict) -> Optional[datetime]:
-    """
-    Resolves the most relevant deadline for a task dict.
-    Task dicts have days_until_deadline as an integer.
-    Convert back to datetime for compatibility with existing engine code.
-    """
-    days = task.get("days_until_deadline")
+    days = task.get("days_until")
     if days is None:
         return None
     return datetime.now() + timedelta(days=days)
 
 
 def get_effective_days_until(task: dict) -> Optional[int]:
-    """Returns days until deadline or None if no deadline."""
-    return task.get("days_until_deadline")
+    return task.get("days_until")
 
 
 # ─── Analytics Service ────────────────────────────────────────────────────────
@@ -108,7 +102,7 @@ class UserAnalyticsService:
 
         score = 0.0
         for task in self.tasks:
-            days = task.get("days_until_deadline")
+            days = task.get("days_until")
             if days is None:
                 continue
             if days <= 0:
