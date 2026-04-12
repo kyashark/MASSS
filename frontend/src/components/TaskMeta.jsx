@@ -30,10 +30,12 @@ const TaskMeta = ({ task, onMenuAction, onStartSession }) => {
   const menuRef = useRef(null);
 
   const taskLabel = title || name || "Untitled Task";
-  const p = priority ? priority.toUpperCase() : "LOW";
+  const p = priority || "low";
   
   // --- STATE LOGIC ---
-  const isStrictlyActive = status === "IN_PROGRESS";
+ const isStrictlyActive = status === "in_progress"; 
+
+ const isComplete       = status === "completed";      // ← lowercase
 
   // Check 'currentSessions' instead of 'actual_pomodoros'
   const isResumable = !isStrictlyActive && !completed && currentSessions > 0;
@@ -87,7 +89,7 @@ const TaskMeta = ({ task, onMenuAction, onStartSession }) => {
 
         <div className="flex items-center gap-2">
           <span className="text-[9px] font-bold px-2 py-0.5 rounded-md border tracking-wide uppercase text-slate-500 bg-slate-100 border-slate-200">
-            {p}
+            {p.replace("_", " ")}
           </span>
 
           {/* ACTIVE Badge */}

@@ -7,6 +7,7 @@ import ActionBridgeCard from "../../components/dashboard/ActionBridgeCard";
 import PomoSession from "../../components/PomoSession";
 import PolicyAnalyticsCard from "../../components/dashboard/PolicyAnalyticsCard";
 import SayVsDoCard from "../../components/dashboard/SayVsDoCard";
+import { SLOTS, SLOT_LABELS } from "../../constants/enums";
 
 // Detailed Research Data from Version 2
 const PHASES = [
@@ -52,12 +53,9 @@ const PHASES = [
 ];
 
 export default function ItemDashboard() {
-  const [activeSlot, setActiveSlot] = useState("Morning");
+  const [activeSlot, setActiveSlot] = useState("morning");
   const [pomodoroTask, setPomodoroTask] = useState(null);
   const [expanded, setExpanded] = useState({ 0: false, 1: false, 2: false });
-
-  const togglePhase = (index) =>
-    setExpanded((prev) => ({ ...prev, [index]: !prev[index] }));
 
   return (
     <div className="min-h-screen bg-slate-100 p-6 lg:p-10 font-['DM_Sans'] text-slate-900">
@@ -77,7 +75,7 @@ export default function ItemDashboard() {
 
         {/* Slot Switcher from Version 2 Logic */}
         <div className="flex bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
-          {["Morning", "Afternoon", "Evening"].map((slot) => (
+          {SLOTS.map((slot) => (
             <button
               key={slot}
               onClick={() => setActiveSlot(slot)}
@@ -87,7 +85,7 @@ export default function ItemDashboard() {
                   : "text-slate-400 hover:text-slate-600"
               }`}
             >
-              {slot}
+              {SLOT_LABELS[slot]}
             </button>
           ))}
         </div>

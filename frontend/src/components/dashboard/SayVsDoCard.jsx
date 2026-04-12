@@ -5,12 +5,12 @@ import { useGapAnalysis } from "../../hooks/useGapAnalysis";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const PRIORITY_COLOR = { HIGH: "text-red-500", MEDIUM: "text-amber-500", LOW: "text-slate-400" };
+const PRIORITY_COLOR = { high: "text-red-500", medium: "text-amber-500", low: "text-slate-400" };
 const END_TYPE_META  = {
-  COMPLETED: { label: "Done",    color: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100" },
-  STOPPED:   { label: "Stopped", color: "text-amber-500",   bg: "bg-amber-50",   border: "border-amber-100" },
-  ABORTED:   { label: "Abort",   color: "text-red-500",     bg: "bg-red-50",     border: "border-red-100" },
-  SKIPPED:   { label: "Skip",    color: "text-slate-500",   bg: "bg-slate-50",   border: "border-slate-100" },
+  completed: { label: "Done",    color: "text-emerald-500", bg: "bg-emerald-50", border: "border-emerald-100" },
+  stopped:   { label: "Stopped", color: "text-amber-500",   bg: "bg-amber-50",   border: "border-amber-100" },
+  aborted:   { label: "Abort",   color: "text-red-500",     bg: "bg-red-50",     border: "border-red-100" },
+  skipped:   { label: "Skip",    color: "text-slate-500",   bg: "bg-slate-50",   border: "border-slate-100" },
 };
 const COMPONENT_META = {
   slot_energy_bonus: { label: "Slot Energy",  color: "bg-emerald-400", text: "text-emerald-600" },
@@ -121,7 +121,7 @@ function AlignmentRow({ item }) {
 
 // ── Main Card ─────────────────────────────────────────────────────────────────
 
-export default function SayVsDoCard({ activeSlot = "Morning" }) {
+export default function SayVsDoCard({ activeSlot = "morning" }) {
   const { data, status, refetch } = useGapAnalysis(activeSlot);
   const [tab, setTab] = useState("overview");
 

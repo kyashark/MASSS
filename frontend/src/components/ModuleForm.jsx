@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import {
+  CATEGORIES,
+  CATEGORY_LABELS,
+  EXAM_TYPES,
+  EXAM_TYPE_LABELS,
+  SLOTS,
+  SLOT_LABELS,
+} from "../constants/enums";
 
 const pastelColors = [
   { name: "Dusty Pink", value: "#E89BAE" },
@@ -12,30 +20,17 @@ const pastelColors = [
   { name: "Coral Rose", value: "#FF9E85" },
 ];
 
-const categories = [
-  "Coding",
-  "Math/Logic",
-  "Language",
-  "Creative Design",
-  "Memorization",
-];
-
-const energyTimes = ["Morning", "Afternoon", "Evening"];
-
-// Defined options based on your Enum
-const examTypes = ["Final", "Midterm", "Quiz", "Assignment", "Presentation", "Other"];
-
 const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
   const [step, setStep] = useState(1); 
   
   const [moduleName, setModuleName] = useState("");
   const [category, setCategory] = useState("");
   const [color, setColor] = useState(pastelColors[0].value);
-  const [energyTime, setEnergyTime] = useState("Morning");
+  const [energyTime, setEnergyTime] = useState("morning");
   
   const [exams, setExams] = useState([]);
   const [newExamName, setNewExamName] = useState("");
-  const [newExamType, setNewExamType] = useState("Final"); // Default to first enum option
+  const [newExamType, setNewExamType] = useState("final");
   const [newExamDueDate, setNewExamDueDate] = useState("");
   const [newExamWeight, setNewExamWeight] = useState(10); 
 
@@ -43,11 +38,11 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
     setModuleName("");
     setCategory("");
     setColor(pastelColors[0].value);
-    setEnergyTime("Morning");
+    setEnergyTime("morning");
     setExams([]);
     setStep(1);
     setNewExamName("");     
-    setNewExamType("Final"); // Default to Final     
+    setNewExamType("final");
     setNewExamDueDate("");
     setNewExamWeight(10);
   }
@@ -57,7 +52,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
       setModuleName(initialModule.name || "");
       setCategory(initialModule.category || "");
       setColor(initialModule.color || pastelColors[0].value);
-      setEnergyTime(initialModule.energy_time || "Morning");
+      setEnergyTime(initialModule.energy_time || "morning");
       
       setExams(
         initialModule.exams?.map((e) => ({
@@ -88,7 +83,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
         },
       ]);
       setNewExamName("");
-      setNewExamType("Final"); // Reset to default
+      setNewExamType("final");
       setNewExamDueDate("");
       setNewExamWeight(10);
     }
@@ -194,8 +189,8 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                       className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                     >
                       <option value="">Select category</option>
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
                       ))}
                     </select>
                   </div>
@@ -207,8 +202,8 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                       onChange={(e) => setEnergyTime(e.target.value)}
                       className="mt-2 w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                     >
-                      {energyTimes.map((time) => (
-                        <option key={time} value={time}>{time}</option>
+                      {SLOTS.map((time) => (
+                        <option key={time} value={time}>{SLOT_LABELS[time]}</option>
                       ))}
                     </select>
                   </div>
@@ -249,8 +244,8 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                     onChange={(e) => setNewExamType(e.target.value)}
                     className="px-4 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-300 transition"
                   >
-                    {examTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
+                    {EXAM_TYPES.map((type) => (
+                      <option key={type} value={type}>{EXAM_TYPE_LABELS[type]}</option>
                     ))}
                   </select>
 
@@ -291,7 +286,7 @@ const ModuleForm = ({ isOpen, onClose, onSubmit, initialModule }) => {
                         <div>
                           <span className="font-semibold text-gray-800">{exam.name}</span>
                           <span className="text-gray-500 mx-3">•</span>
-                          <span className="text-gray-600">{exam.type}</span>
+                          <span className="text-gray-600">{EXAM_TYPE_LABELS[exam.type] || exam.type}</span>
                           <span className="text-gray-500 mx-3">•</span>
                           <span className="text-gray-600 font-medium">Wgt: {exam.weight}%</span>
                         </div>

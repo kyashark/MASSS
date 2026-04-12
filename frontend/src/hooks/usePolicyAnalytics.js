@@ -6,7 +6,7 @@ import axiosClient from "../api/axiosClient";
 const USER_ID    = 1;
 const POLL_EVERY = 30_000;   // 30s — policy data is slow moving
 
-export function usePolicyAnalytics(activeSlot = "Morning") {
+export function usePolicyAnalytics(activeSlot = "morning") {
   const [data,   setData]   = useState(null);
   const [status, setStatus] = useState("loading");
 

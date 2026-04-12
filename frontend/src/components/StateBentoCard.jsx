@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 
 const getCurrentSlot = () => {
-  const h = new Date().getHours();
-  if (h >= 6 && h < 12) return "Morning";
-  if (h >= 12 && h < 18) return "Afternoon";
-  return "Evening";
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 12) return "morning";    // ← lowercase
+  if (hour >= 12 && hour < 18) return "afternoon";
+  return "evening";
 };
 
 const SLOT_META = {
-  Morning:   { icon: "☀️" },
-  Afternoon: { icon: "🌤️" },
-  Evening:   { icon: "🌙" },
+  morning:   { icon: "☀️" },
+  afternoon: { icon: "🌤️" },
+  evening:   { icon: "🌙" },
 };
 
 const StateBentoCard = () => {
@@ -43,7 +43,7 @@ const StateBentoCard = () => {
         </div>
         
         <div className="text-[28px] font-[700] font-mono">
-          {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }).toUpperCase()}
+          {now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true })}
         </div>
         
         <div className="text-[11px] font-mono text-[#475569] mt-[2px]">

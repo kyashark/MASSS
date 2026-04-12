@@ -8,7 +8,7 @@ const POLL_MS = 8000;
 /**
  * Hook for the Action Probability Distribution card.
  *
- * @param {string} activeSlot - "Morning" | "Afternoon" | "Evening"
+ * @param {string} activeSlot - "morning" | "afternoon" | "evening"
  * @returns {{
  *   data:       object|null,
  *   prevData:   object|null,   <- previous fetch, used to show delta badges
@@ -17,7 +17,7 @@ const POLL_MS = 8000;
  *   refetch:    () => void,
  * }}
  */
-export function useActionDistribution(activeSlot = "Morning") {
+export function useActionDistribution(activeSlot = "morning") {
   const [data,       setData]       = useState(null);
   const [prevData,   setPrevData]   = useState(null);
   const [status,     setStatus]     = useState("loading");

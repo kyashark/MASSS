@@ -72,7 +72,7 @@ const PomoSession = ({
       await endSession(sessionId, {
         is_completed: false,
         focus_rating: 1,
-        end_type: "ABORTED"
+        end_type: "aborted"
       });
     }
     setSeconds(0);
@@ -140,9 +140,9 @@ const PomoSession = ({
         await endSession(sessionId, {
             is_completed: true,
             focus_rating: rating,
-            end_type: "COMPLETED"
+          end_type: "completed"
         });
-        await updateTaskStatus(task.id, "COMPLETED");
+        await updateTaskStatus(task.id, "completed");
         if (onComplete) onComplete(task.id);
         onClose();
     } catch (err) { console.error(err); }
@@ -155,9 +155,9 @@ const PomoSession = ({
         await endSession(sessionId, {
             is_completed: false, // Incomplete session
             focus_rating: rating,
-            end_type: "STOPPED"
+          end_type: "stopped"
         });
-        await updateTaskStatus(task.id, "IN_PROGRESS");
+        await updateTaskStatus(task.id, "in_progress");
         if (onUpdateTask) onUpdateTask();
         onClose();
     } catch (err) { console.error(err); }
@@ -173,7 +173,7 @@ const PomoSession = ({
       }
       
       // If sessions were completed before, keep it IN_PROGRESS, else PENDING
-      const newStatus = completedSessions > 0 ? "IN_PROGRESS" : "PENDING";
+      const newStatus = completedSessions > 0 ? "in_progress" : "pending"; 
       await updateTaskStatus(task.id, newStatus);
       
       if (onUpdateTask) onUpdateTask();

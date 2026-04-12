@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Edit2, Plus, Save, X } from 'lucide-react';
 import { addRoutineEvent, updateRoutineEvent } from '../../api/profile';
+import { ACTIVITY_LABELS, ACTIVITY_TYPES, DAY_LABELS, DAYS_OF_WEEK } from '../../constants/enums';
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS = DAYS_OF_WEEK;
 const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const ACTIVITY_TYPES = ["Class", "Sleep", "Habit", "Work"];
 const EMPTY_FORM = {
-  name: '', activity_type: 'Class',
+  name: '', activity_type: 'class',
   start_time: '09:00', end_time: '10:00', days: []
 };
 
@@ -140,7 +140,9 @@ const RoutineForm = ({ editTarget, onAdd, onUpdate, onCancelEdit }) => {
               onChange={e => setForm({ ...form, activity_type: e.target.value })}
               style={{ ...inputStyle, cursor: "pointer" }}
             >
-              {ACTIVITY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              {ACTIVITY_TYPES.map((activity) => (
+                <option key={activity} value={activity}>{ACTIVITY_LABELS[activity]}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -193,6 +195,11 @@ const RoutineForm = ({ editTarget, onAdd, onUpdate, onCancelEdit }) => {
               );
             })}
           </div>
+          {isEditing && form.days[0] && (
+            <div style={{ marginTop: 6, fontSize: 11, color: '#64748b' }}>
+              Day: {DAY_LABELS[form.days[0]] || form.days[0]}
+            </div>
+          )}
         </div>
 
         {/* Submit */}

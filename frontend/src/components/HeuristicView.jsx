@@ -29,7 +29,7 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
 
   // --- Helpers ---
   const mergeRoutineWithSchedule = (aiSchedule, fullRoutine) => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     const todayName = days[new Date().getDay()];
     const todayRoutine = fullRoutine.filter(item => item.day_of_week === todayName);
 

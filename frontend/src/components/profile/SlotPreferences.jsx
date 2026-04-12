@@ -1,13 +1,14 @@
 import React from 'react';
 import { Zap, Check, Star } from 'lucide-react';
 import { updatePreference } from '../../api/profile';
+import { SLOTS, SLOT_LABELS } from '../../constants/enums';
 
-const SLOT_NAMES = ["Morning", "Afternoon", "Evening"];
+const SLOT_NAMES = SLOTS;
 
 const SLOT_META = {
-  Morning:   { icon: "☀️", hours: "06:00 – 12:00", color: "#f59e0b" },
-  Afternoon: { icon: "🌤️", hours: "12:00 – 18:00", color: "#6366f1" },
-  Evening:   { icon: "🌙", hours: "18:00 – 24:00", color: "#8b5cf6" },
+  morning:   { icon: "☀️", hours: "06:00 – 12:00", color: "#f59e0b" },
+  afternoon: { icon: "🌤️", hours: "12:00 – 18:00", color: "#6366f1" },
+  evening:   { icon: "🌙", hours: "18:00 – 24:00", color: "#8b5cf6" },
 };
 
 const SlotPreferences = ({ preferences, onChange }) => {
@@ -76,7 +77,7 @@ const SlotPreferences = ({ preferences, onChange }) => {
                   <span style={{ fontSize: 18 }}>{meta.icon}</span>
                   <div>
                     <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 13, color: "#0f172a" }}>
-                      {slot}
+                      {SLOT_LABELS[slot] || slot}
                     </div>
                     <div style={{ fontFamily: "DM Mono, monospace", fontSize: 10, color: "#94a3b8" }}>
                       {meta.hours}
