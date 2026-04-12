@@ -66,17 +66,22 @@ def generate_schedule(request: ScheduleRequest):
     }
 
     energy_map = context.get("energy_map", {})
-    best_slot = max(energy_map, key=energy_map.get) if energy_map else "Morning"
+    best_slot = (
+        max(energy_map, key=energy_map.get) if energy_map else "morning"
+    )  # ← lowercase
 
     for task in tasks:
-        if task.get("status") == "IN_PROGRESS" and task["id"] not in scheduled_ids:
+        if (
+            task.get("status") == "in_progress"  # ← lowercase
+            and task["id"] not in scheduled_ids
+        ):
             result[best_slot].insert(
                 0,
                 {
                     "task_id": task["id"],
                     "task_name": task["name"],
                     "slot": best_slot,
-                    "allocation_type": "STICKY_RULE",
+                    "allocation_type": "sticky_rule",  # ← lowercase
                 },
             )
             # Mark strategy as RL_PPO since at least one task is scheduled

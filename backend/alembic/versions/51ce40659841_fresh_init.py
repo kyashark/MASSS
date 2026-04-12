@@ -1,8 +1,8 @@
 """fresh init
 
-Revision ID: c8ba063eadec
+Revision ID: 51ce40659841
 Revises: 
-Create Date: 2026-04-12 10:11:55.838103
+Create Date: 2026-04-12 14:28:05.687658
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c8ba063eadec'
+revision: str = '51ce40659841'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -91,7 +91,7 @@ def upgrade() -> None:
     sa.Column('estimated_pomodoros', sa.Integer(), nullable=True),
     sa.Column('sessions_count', sa.Integer(), nullable=True),
     sa.Column('deadline', sa.DateTime(), nullable=True),
-    sa.Column('priority', sa.Enum('PENDING', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED', name='taskstatus'), nullable=True),
+    sa.Column('priority', sa.Enum('LOW', 'MEDIUM', 'HIGH', name='prioritylevel'), nullable=True),
     sa.Column('difficulty', sa.Integer(), nullable=True),
     sa.Column('is_fixed', sa.Boolean(), nullable=True),
     sa.Column('status', sa.Enum('PENDING', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED', name='taskstatus'), nullable=True),

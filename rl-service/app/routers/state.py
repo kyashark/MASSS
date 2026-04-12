@@ -8,9 +8,9 @@ from datetime import datetime
 router = APIRouter()
 
 SLOT_HOURS = {
-    "Morning": (6, 12),
-    "Afternoon": (12, 18),
-    "Evening": (18, 24),
+    "morning": (6, 12),  # ← lowercase
+    "afternoon": (12, 18),
+    "evening": (18, 24),
 }
 
 
@@ -33,11 +33,11 @@ def get_state_vector(request: StateRequest):
 
     current_hour = datetime.now().hour
     live_slot = (
-        "Morning"
-        if 6 <= current_hour < 12
-        else "Afternoon"
+        "morning"
+        if 6 <= current_hour < 12  # ← lowercase
+        else "afternoon"
         if 12 <= current_hour < 18
-        else "Evening"
+        else "evening"
     )
 
     work_intensity = analytics._calculate_work_intensity()

@@ -1,28 +1,28 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
 
-
-VALID_PRIORITIES = {"HIGH", "MEDIUM", "LOW"}
+VALID_PRIORITIES = {"high", "medium", "low"}
 VALID_CATEGORIES = {
-    "Coding",
-    "Math/Logic",
-    "Language",
-    "Creative Design",
-    "Memorization",
-    "Other",
+    "coding",
+    "math_logic",
+    "language",
+    "creative_design",
+    "memorization",
+    "other",
 }
-VALID_SLOTS = {"Morning", "Afternoon", "Evening"}
-VALID_END_TYPES = {"COMPLETED", "STOPPED", "ABORTED", "SKIPPED"}
-VALID_ACTIVITY_TYPES = {"Class", "Sleep", "Habit", "Work"}
+VALID_SLOTS = {"morning", "afternoon", "evening"}
+VALID_END_TYPES = {"completed", "stopped", "aborted", "skipped"}
+VALID_ACTIVITY_TYPES = {"class", "sleep", "habit", "work"}
 VALID_DAYS = {
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
 }
+VALID_STATUSES = {"pending", "in_progress", "completed", "archived"}
 
 
 class TaskInput(BaseModel):
@@ -34,11 +34,11 @@ class TaskInput(BaseModel):
     estimated_pomodoros: int
     sessions_count: int
     days_until: Optional[int] = None
-    status: str = "PENDING"
+    status: str = "pending"
 
     @field_validator("priority")
     @classmethod
-    def priority_must_be_uppercase(cls, v):
+    def priority_must_be_valid(cls, v):
         if v not in VALID_PRIORITIES:
             raise ValueError(f"priority must be one of {VALID_PRIORITIES}, got '{v}'")
         return v
@@ -96,8 +96,8 @@ class RoutineEventInput(BaseModel):
     name: str
     activity_type: str
     day_of_week: str
-    start_time: str  # HH:MM format
-    end_time: str  # HH:MM format
+    start_time: str
+    end_time: str
 
     @field_validator("activity_type")
     @classmethod
@@ -116,7 +116,7 @@ class RoutineEventInput(BaseModel):
 
 class ScheduleRequest(BaseModel):
     user_id: int
-    active_slot: str = "Morning"
+    active_slot: str = "morning"
     tasks: List[TaskInput]
     session_history: List[SessionHistoryItem] = []
     slot_preferences: List[SlotPreferenceInput] = []
@@ -130,10 +130,9 @@ class ScheduleRequest(BaseModel):
         return v
 
 
-# StateRequest only needs history and preferences — no tasks needed
 class StateRequest(BaseModel):
     user_id: int
-    active_slot: str = "Morning"
+    active_slot: str = "morning"
     session_history: List[SessionHistoryItem] = []
     slot_preferences: List[SlotPreferenceInput] = []
     weekly_routine: List[RoutineEventInput] = []

@@ -40,7 +40,7 @@ class Task(Base):
     estimated_pomodoros = Column(Integer, default=1)
     sessions_count = Column(Integer, default=0)
     deadline = Column(DateTime, nullable=True)
-    priority = Column(SAEnum(TaskStatus), default=PriorityLevel.MEDIUM)
+    priority = Column(SAEnum(PriorityLevel), default=PriorityLevel.MEDIUM)
     difficulty = Column(Integer, default=3)
     is_fixed = Column(Boolean, default=False)
     status = Column(SAEnum(TaskStatus), default=TaskStatus.PENDING)

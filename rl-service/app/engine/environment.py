@@ -46,25 +46,20 @@ class StudentSchedulingEnv(gym.Env):
         self.work_intensity = self.user_profile.get("work_intensity", 0.0)
 
         user_stats = self.user_profile.get("energy_map", {})
-        morn = user_stats.get("Morning", 3.0)
-        aft = user_stats.get("Afternoon", 3.0)
-        eve = user_stats.get("Evening", 3.0)
+        morn = user_stats.get("morning", 3.0)  # ← lowercase
+        aft = user_stats.get("afternoon", 3.0)  # ← lowercase
+        eve = user_stats.get("evening", 3.0)  # ← lowercase
 
         def calc_cap(focus):
             return int(max(2, min(6, focus + 1)))
 
-        # FIXED: use string keys "Morning"/"Afternoon"/"Evening"
-        # state_builder.build_state() calls capacity_map.get("Morning", 4.0)
-        # With int keys {0,1,2} it always got the 4.0 default — slot capacity
-        # was never actually used during training.
         self.todays_capacity = {
-            "Morning": calc_cap(morn),
-            "Afternoon": calc_cap(aft),
-            "Evening": calc_cap(eve),
+            "morning": calc_cap(morn),  # ← lowercase
+            "afternoon": calc_cap(aft),
+            "evening": calc_cap(eve),
         }
 
-        # Keep int-keyed version for slot indexing in step()
-        self._slot_names = ["Morning", "Afternoon", "Evening"]
+        self._slot_names = ["morning", "afternoon", "evening"]  # ← lowercase
 
         hist = self.user_profile.get("recent_ratings", [])
         clean_hist = [float(x) for x in hist if x is not None]
