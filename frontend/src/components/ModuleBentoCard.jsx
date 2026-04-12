@@ -26,15 +26,15 @@ const ModuleBentoCard = () => {
   // --- LOGIC: Determine Focus based on Time ---
   const processSchedule = (schedule) => {
     const hour = new Date().getHours();
-    let currentPeriod = "Morning";
-    let nextPeriods = ["Afternoon", "Evening"];
+ let currentPeriod = "morning";
+let nextPeriods = ["afternoon", "evening"];
 
     if (hour >= 12 && hour < 17) {
-      currentPeriod = "Afternoon";
-      nextPeriods = ["Evening"];
+      currentPeriod = "afternoon";
+      nextPeriods = ["evening", "morning"];
     } else if (hour >= 17) {
-      currentPeriod = "Evening";
-      nextPeriods = [];
+      currentPeriod = "evening";
+      nextPeriods = ["morning", "afternoon"];
     }
 
     // 1. Find Current Focus
