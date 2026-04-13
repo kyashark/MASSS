@@ -1,93 +1,61 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import axiosClient from "../api/axiosClient";
-import {
-  ACTIVITY_LABELS,
-  ACTIVITY_TYPES,
-  DAY_LABELS,
-  DAYS_OF_WEEK,
-} from "../constants/enums";
+import { useNavigate } from "react-router-dom";
 
-// ── Step Data ─────────────────────────────────────────────────────────────────
+const SLOT_ORDER = ["morning", "afternoon", "evening"];
+
+const SLOT_ICONS = {
+  morning: "☀️",
+  afternoon: "🌤️",
+  evening: "🌙",
+};
 
 const CHRONOTYPES = [
   {
-    id:          "morning_bird",   // ← lowercase with underscore
-    label:       "Morning Bird",
-    icon:        "☀️",
+    id: "morning_bird",
+    label: "Morning Bird",
+    icon: "☀️",
     description: "I focus best before noon",
-    slots: { morning: 6, afternoon: 3, evening: 1 },   // ← lowercase
   },
   {
-    id:          "balanced",
-    label:       "Balanced",
-    icon:        "⚖️",
+    id: "balanced",
+    label: "Balanced",
+    icon: "⚖️",
     description: "I study equally well throughout the day",
-    slots: { morning: 4, afternoon: 4, evening: 4 },
   },
   {
-    id:          "night_owl",
-    label:       "Night Owl",
-    icon:        "🌙",
-    description: "I focus best in the afternoon and evening",
-    slots: { morning: 1, afternoon: 4, evening: 6 },
+    id: "night_owl",
+    label: "Night Owl",
+    icon: "🌙",
+    description: "I focus best in the evening",
   },
 ];
 
-const DAYS = DAYS_OF_WEEK;
-const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-// ── Sub Components ────────────────────────────────────────────────────────────
-
-function StepIndicator({ current, total }) {
-  return (
-    <div className="flex items-center gap-2 mb-8">
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-            i < current ? "bg-gray-900" : "bg-gray-200"
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
-
 // ── Step 1: Chronotype ────────────────────────────────────────────────────────
-
-function ChronotypeStep({ value, onChange }) {
+function ChronotypeStep({ selected, onSelect }) {
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
-        When do you study best?
-      </h2>
-      <p className="text-gray-500 text-sm mb-8">
-        This sets your initial energy profile. You can change it later.
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white">When do you study best?</h2>
+      <p className="text-gray-400 text-sm">
+        We'll pre-configure your study slots based on this.
       </p>
-
-      <div className="space-y-3">
-        {CHRONOTYPES.map((type) => (
+      <div className="grid gap-3">
+        {CHRONOTYPES.map((c) => (
           <button
-            key={type.id}
-            onClick={() => onChange(type)}
-            className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-              value?.id === type.id
-                ? "border-gray-900 bg-gray-50"
-                : "border-gray-200 hover:border-gray-300"
+            key={c.id}
+            onClick={() => onSelect(c.id)}
+            className={`p-4 rounded-xl text-left border-2 transition-all ${
+              selected === c.id
+                ? "border-teal-400 bg-teal-900/30"
+                : "border-gray-700 bg-gray-800/50 hover:border-gray-500"
             }`}
           >
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">{type.icon}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{c.icon}</span>
               <div>
-                <div className="font-semibold text-gray-900">{type.label}</div>
-                <div className="text-sm text-gray-500">{type.description}</div>
+                <div className="font-semibold text-white">{c.label}</div>
+                <div className="text-sm text-gray-400">{c.description}</div>
               </div>
-              {value?.id === type.id && (
-                <div className="ml-auto w-5 h-5 rounded-full bg-gray-900 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-white" />
-                </div>
-              )}
             </div>
           </button>
         ))}
@@ -96,146 +64,91 @@ function ChronotypeStep({ value, onChange }) {
   );
 }
 
-// ── Step 2: Weekly Routine ────────────────────────────────────────────────────
-
-function RoutineStep({ events, onChange }) {
+// ── Step 2: Routine ───────────────────────────────────────────────────────────
+function RoutineStep({ events, onAdd, onRemove }) {
   const [form, setForm] = useState({
     name: "",
     activity_type: "class",
     days: [],
     start_time: "09:00",
-    end_time: "10:00",
+    end_time: "11:00",
   });
 
+  const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
   const toggleDay = (day) => {
-    setForm((prev) => ({
-      ...prev,
-      days: prev.days.includes(day)
-        ? prev.days.filter((d) => d !== day)
-        : [...prev.days, day],
+    setForm((f) => ({
+      ...f,
+      days: f.days.includes(day) ? f.days.filter((d) => d !== day) : [...f.days, day],
     }));
   };
 
-  const addEvent = () => {
+  const handleAdd = () => {
     if (!form.name || form.days.length === 0) return;
-    onChange([...events, { ...form, id: Date.now() }]);
-    setForm({
-      name: "",
-      activity_type: "class",
-      days: [],
-      start_time: "09:00",
-      end_time: "10:00",
-    });
-  };
-
-  const removeEvent = (id) => {
-    onChange(events.filter((e) => e.id !== id));
+    onAdd({ ...form });
+    setForm({ name: "", activity_type: "class", days: [], start_time: "09:00", end_time: "11:00" });
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
-        Add your weekly schedule
-      </h2>
-      <p className="text-gray-500 text-sm mb-6">
-        Classes, work, and fixed commitments. The AI uses this to avoid
-        scheduling tasks during your busy times.
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white">Your weekly commitments</h2>
+      <p className="text-gray-400 text-sm">
+        Add classes, work, or other fixed events. Optional — skip if you prefer.
       </p>
 
-      {/* Add Event Form */}
-      <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            type="text"
-            placeholder="e.g. Physics Lecture"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-gray-900"
-          />
-
+      <div className="bg-gray-800 rounded-xl p-4 space-y-3">
+        <input
+          className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 text-sm"
+          placeholder="Event name (e.g. Physics Lecture)"
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+        />
+        <div className="flex gap-2">
           <select
+            className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-2 text-sm"
             value={form.activity_type}
-            onChange={(e) =>
-              setForm({ ...form, activity_type: e.target.value })
-            }
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none bg-white"
+            onChange={(e) => setForm((f) => ({ ...f, activity_type: e.target.value }))}
           >
-            {ACTIVITY_TYPES.map((activity) => (
-              <option key={activity} value={activity}>{ACTIVITY_LABELS[activity]}</option>
-            ))}
+            <option value="class">Class</option>
+            <option value="work">Work</option>
+            <option value="habit">Habit</option>
           </select>
-
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="time"
-              value={form.start_time}
-              onChange={(e) =>
-                setForm({ ...form, start_time: e.target.value })
-              }
-              className="px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none"
-            />
-            <input
-              type="time"
-              value={form.end_time}
-              onChange={(e) => setForm({ ...form, end_time: e.target.value })}
-              className="px-2 py-2 border border-gray-300 rounded-lg text-sm outline-none"
-            />
-          </div>
+          <input type="time" className="bg-gray-700 text-white rounded-lg px-2 py-2 text-sm"
+            value={form.start_time} onChange={(e) => setForm((f) => ({ ...f, start_time: e.target.value }))} />
+          <span className="text-gray-400 self-center">–</span>
+          <input type="time" className="bg-gray-700 text-white rounded-lg px-2 py-2 text-sm"
+            value={form.end_time} onChange={(e) => setForm((f) => ({ ...f, end_time: e.target.value }))} />
         </div>
-
-        {/* Day Selector */}
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1 flex-wrap">
           {DAYS.map((day, i) => (
-            <button
-              key={day}
-              type="button"
-              onClick={() => toggleDay(day)}
-              className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
+            <button key={day} onClick={() => toggleDay(day)}
+              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                 form.days.includes(day)
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-500 border-gray-300"
-              }`}
-            >
-              {DAYS_SHORT[i]}
+                  ? "bg-teal-500 text-white"
+                  : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+              }`}>
+              {DAY_LABELS[i]}
             </button>
           ))}
         </div>
-
-        <button
-          onClick={addEvent}
-          disabled={!form.name || form.days.length === 0}
-          className="w-full py-2 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-40 transition-opacity"
-        >
-          Add Event
+        <button onClick={handleAdd}
+          className="w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-sm font-medium transition-colors">
+          + Add Event
         </button>
       </div>
 
-      {/* Event List */}
-      {events.length === 0 ? (
-        <p className="text-center text-gray-400 text-sm py-4">
-          No events added yet. You can skip this and add them later.
-        </p>
-      ) : (
+      {events.length > 0 && (
         <div className="space-y-2">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg"
-            >
+          {events.map((e, i) => (
+            <div key={i} className="flex items-center justify-between bg-gray-800 rounded-lg p-3">
               <div>
-                <div className="text-sm font-medium text-gray-900">
-                  {event.name}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {event.days.map((d) => DAY_LABELS[d] || d).join(", ")} · {event.start_time}–{event.end_time}
-                </div>
+                <span className="text-white text-sm font-medium">{e.name}</span>
+                <span className="text-gray-400 text-xs ml-2">
+                  {e.start_time}–{e.end_time} · {e.days.join(", ")}
+                </span>
               </div>
-              <button
-                onClick={() => removeEvent(event.id)}
-                className="text-gray-400 hover:text-red-500 text-xs font-medium transition-colors"
-              >
-                Remove
-              </button>
+              <button onClick={() => onRemove(i)} className="text-gray-500 hover:text-red-400 text-sm">✕</button>
             </div>
           ))}
         </div>
@@ -244,242 +157,208 @@ function RoutineStep({ events, onChange }) {
   );
 }
 
-// ── Step 3: Capacity ──────────────────────────────────────────────────────────
-
-function CapacityStep({ capacity, onChange }) {
-const slots = [
-  { key: "morning",   label: "Morning",   icon: "☀️", hours: "6am – 12pm" },
-  { key: "afternoon", label: "Afternoon", icon: "🌤️", hours: "12pm – 6pm" },
-  { key: "evening",   label: "Evening",   icon: "🌙", hours: "6pm – 12am" },
-];
-
+// ── Step 3: Custom Slots ──────────────────────────────────────────────────────
+function SlotsStep({ slots, onUpdateSlot }) {
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
-        Set your daily capacity
-      </h2>
-      <p className="text-gray-500 text-sm mb-8">
-        How many 25-minute study sessions can you do per slot?
-        The AI will not schedule more than this.
+    <div className="space-y-4">
+      <h2 className="text-xl font-bold text-white">Configure your study slots</h2>
+      <p className="text-gray-400 text-sm">
+        Set the name, time window, and capacity for each of your 3 study periods.
+        These are pre-filled based on your chronotype — adjust as needed.
       </p>
 
-      <div className="space-y-6">
-        {slots.map((slot) => (
-          <div key={slot.key}>
-            <div className="flex justify-between items-center mb-2">
+      <div className="space-y-4">
+        {SLOT_ORDER.map((slotName) => {
+          const slot = slots.find((s) => s.slot_name === slotName);
+          if (!slot) return null;
+
+          return (
+            <div key={slotName} className="bg-gray-800 rounded-xl p-4 border border-gray-700 space-y-3">
+              {/* Header */}
               <div className="flex items-center gap-2">
-                <span className="text-xl">{slot.icon}</span>
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">
-                    {slot.label}
-                  </div>
-                  <div className="text-xs text-gray-400">{slot.hours}</div>
+                <span className="text-xl">{SLOT_ICONS[slotName]}</span>
+                <input
+                  className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-1.5 text-sm font-medium"
+                  value={slot.slot_label}
+                  onChange={(e) =>
+                    onUpdateSlot(slotName, "slot_label", e.target.value)
+                  }
+                  placeholder="Slot name"
+                />
+              </div>
+
+              {/* Time Range */}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 text-xs w-12">From</span>
+                <input
+                  type="time"
+                  className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-1.5 text-sm"
+                  value={slot.start_time}
+                  onChange={(e) =>
+                    onUpdateSlot(slotName, "start_time", e.target.value)
+                  }
+                />
+                <span className="text-gray-400 text-xs">to</span>
+                <input
+                  type="time"
+                  className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-1.5 text-sm"
+                  value={slot.end_time}
+                  onChange={(e) =>
+                    onUpdateSlot(slotName, "end_time", e.target.value)
+                  }
+                />
+              </div>
+
+              {/* Capacity Slider */}
+              <div>
+                <div className="flex justify-between text-xs text-gray-400 mb-1">
+                  <span>Max sessions</span>
+                  <span className="text-teal-400 font-bold">{slot.max_pomodoros}</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  value={slot.max_pomodoros}
+                  onChange={(e) =>
+                    onUpdateSlot(slotName, "max_pomodoros", parseInt(e.target.value))
+                  }
+                  className="w-full accent-teal-500"
+                />
+                <div className="flex justify-between text-xs text-gray-600 mt-0.5">
+                  <span>1</span>
+                  <span>10</span>
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
-                {capacity[slot.key]}
-              </div>
             </div>
-
-            {/* Progress Bar */}
-            <div className="h-2 bg-gray-100 rounded-full mb-2 overflow-hidden">
-              <div
-                className="h-full bg-gray-900 rounded-full transition-all duration-300"
-                style={{ width: `${(capacity[slot.key] / 12) * 100}%` }}
-              />
-            </div>
-
-            {/* Slider */}
-            <input
-              type="range"
-              min="0"
-              max="12"
-              step="1"
-              value={capacity[slot.key]}
-              onChange={(e) =>
-                onChange({ ...capacity, [slot.key]: parseInt(e.target.value) })
-              }
-              className="w-full accent-gray-900"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mt-1">
-              <span>0 sessions</span>
-              <span>12 sessions</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ── Main Onboarding Page ──────────────────────────────────────────────────────
-
-const Onboarding = () => {
+// ── Main Onboarding Component ─────────────────────────────────────────────────
+export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const [chronotype, setChronotype] = useState(null);
+  const [chronotype, setChronotype] = useState("");
   const [routineEvents, setRoutineEvents] = useState([]);
-  const [capacity, setCapacity] = useState({
-    morning: 4,
-    afternoon: 4,
-    evening: 4,
-  });
+  const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const TOTAL_STEPS = 3;
-
-  // When chronotype is selected, update capacity defaults
-  const handleChronotypeChange = (selected) => {
-    setChronotype(selected);
-    setCapacity(selected.slots);
-  };
-
-  const handleNext = () => {
-    if (step === 1 && !chronotype) {
-      setError("Please select when you study best.");
-      return;
+  // When chronotype selected, fetch defaults and pre-populate slots
+  const handleChronotypeSelect = async (value) => {
+    setChronotype(value);
+    try {
+      const res = await axiosClient.get(`/onboarding/slot-defaults/${value}`);
+      setSlots(res.data.slots);
+    } catch {
+      // Use hardcoded fallback if endpoint fails
+      setSlots([
+        { slot_name: "morning",   slot_label: "Morning",   start_time: "08:00", end_time: "12:00", max_pomodoros: 4 },
+        { slot_name: "afternoon", slot_label: "Afternoon", start_time: "13:00", end_time: "17:00", max_pomodoros: 4 },
+        { slot_name: "evening",   slot_label: "Evening",   start_time: "19:00", end_time: "22:00", max_pomodoros: 4 },
+      ]);
     }
-    setError("");
-    setStep((s) => s + 1);
   };
 
-  const handleBack = () => {
-    setError("");
-    setStep((s) => s - 1);
+  const updateSlot = (slotName, field, value) => {
+    setSlots((prev) =>
+      prev.map((s) => (s.slot_name === slotName ? { ...s, [field]: value } : s))
+    );
   };
 
   const handleFinish = async () => {
     setLoading(true);
-    setError("");
-
     try {
       await axiosClient.post("/onboarding/complete", {
-        chronotype: chronotype.id,
-        routine_events: routineEvents.map((e) => ({
-          name: e.name,
-          activity_type: e.activity_type,
-          days: e.days,
-          start_time: e.start_time,
-          end_time: e.end_time,
-        })),
-        capacity: {
-          morning: capacity.morning,
-          afternoon: capacity.afternoon,
-          evening: capacity.evening,
-        },
+        chronotype,
+        routine_events: routineEvents,
+        slots,
       });
-
       navigate("/user/home");
     } catch (err) {
-      setError(
-        err.response?.data?.detail || "Something went wrong. Please try again."
-      );
+      console.error("Onboarding error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSkip = async () => {
-    setLoading(true);
-    try {
-      await axiosClient.post("/onboarding/skip");
-      navigate("/user/home");
-    } catch {
-      navigate("/user/home");
-    } finally {
-      setLoading(false);
-    }
+  const canProceed = () => {
+    if (step === 1) return chronotype !== "";
+    if (step === 2) return true; // routine is optional
+    if (step === 3) return slots.length === 3 && slots.every(
+      (s) => s.slot_label && s.start_time && s.end_time
+    );
+    return false;
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-sm border border-gray-100 p-8">
-
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <div className="text-xs font-mono text-gray-400 uppercase tracking-wider mb-1">
-              Step {step} of {TOTAL_STEPS}
-            </div>
-            <div className="text-lg font-bold text-gray-900">
-              Let's set up your profile
-            </div>
-          </div>
-          <button
-            onClick={handleSkip}
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            Skip setup
-          </button>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Progress */}
+        <div className="flex gap-2 mb-8">
+          {[1, 2, 3].map((n) => (
+            <div key={n}
+              className={`h-1 flex-1 rounded-full transition-colors ${
+                n <= step ? "bg-teal-400" : "bg-gray-700"
+              }`}
+            />
+          ))}
         </div>
 
-        {/* Step Indicator */}
-        <StepIndicator current={step} total={TOTAL_STEPS} />
-
-        {/* Error */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm">
-            {error}
-          </div>
-        )}
-
         {/* Step Content */}
-        <div className="mb-8">
+        <div className="min-h-72">
           {step === 1 && (
-            <ChronotypeStep
-              value={chronotype}
-              onChange={handleChronotypeChange}
-            />
+            <ChronotypeStep selected={chronotype} onSelect={handleChronotypeSelect} />
           )}
           {step === 2 && (
             <RoutineStep
               events={routineEvents}
-              onChange={setRoutineEvents}
+              onAdd={(e) => setRoutineEvents((prev) => [...prev, e])}
+              onRemove={(i) => setRoutineEvents((prev) => prev.filter((_, idx) => idx !== i))}
             />
           )}
           {step === 3 && (
-            <CapacityStep
-              capacity={capacity}
-              onChange={setCapacity}
-            />
+            <SlotsStep slots={slots} onUpdateSlot={updateSlot} />
           )}
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between gap-3">
-          {step > 1 ? (
+        {/* Navigation */}
+        <div className="flex gap-3 mt-8">
+          {step > 1 && (
             <button
-              onClick={handleBack}
-              className="px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-            >
+              onClick={() => setStep((s) => s - 1)}
+              className="flex-1 py-3 rounded-xl border border-gray-600 text-gray-300 hover:bg-gray-800 transition-colors">
               Back
             </button>
-          ) : (
-            <div />
           )}
-
-          {step < TOTAL_STEPS ? (
+          {step < 3 ? (
             <button
-              onClick={handleNext}
-              className="px-8 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-black transition-colors"
-            >
+              onClick={() => setStep((s) => s + 1)}
+              disabled={!canProceed()}
+              className="flex-1 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition-colors">
               Next
             </button>
           ) : (
             <button
               onClick={handleFinish}
-              disabled={loading}
-              className="px-8 py-2.5 bg-gray-900 text-white font-medium rounded-lg hover:bg-black transition-colors disabled:opacity-50"
-            >
-              {loading ? "Saving..." : "Finish Setup"}
+              disabled={!canProceed() || loading}
+              className="flex-1 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 text-white font-semibold transition-colors">
+              {loading ? "Setting up..." : "Finish Setup"}
             </button>
           )}
         </div>
+
+        {step === 2 && (
+          <button
+            onClick={() => setStep(3)}
+            className="w-full mt-2 py-2 text-gray-500 hover:text-gray-300 text-sm transition-colors">
+            Skip this step
+          </button>
+        )}
       </div>
     </div>
   );
-};
-
-export default Onboarding;
+}
