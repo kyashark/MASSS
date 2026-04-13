@@ -9,7 +9,7 @@ import axiosClient from "../api/axiosClient";
 const USER_ID      = 1;
 const POLL_EVERY   = 15_000;   // re-fetch every 15s (slot energy can shift)
 
-export function useRecommendation(activeSlot = "Morning") {
+export function useRecommendation(activeSlot = "morning") {
   const [rec,    setRec]    = useState(null);
   const [status, setStatus] = useState("loading");   // loading | live | error
 

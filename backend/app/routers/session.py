@@ -18,10 +18,10 @@ router = APIRouter(prefix="/sessions", tags=["Pomodoro Sessions"])
 def get_slot_name(current_time: datetime) -> str:
     hour = current_time.hour
     if 6 <= hour < 12:
-        return "Morning"
+        return "morning"
     if 12 <= hour < 18:
-        return "Afternoon"
-    return "Evening"
+        return "afternoon"
+    return "evening"
 
 
 # =====================================================
@@ -114,17 +114,11 @@ def end_session(
     if payload.end_type == SessionEndType.COMPLETED:
         session.is_completed = True
         task.sessions_count += 1
-
-        # --- MAJOR UPDATE: AUTO-ADJUST ESTIMATE ---
-        # If the student is continuing work (sessions_count > estimate),
-        # we automatically increase the estimate so the task stays active.
         if task.sessions_count > task.estimated_pomodoros:
             task.estimated_pomodoros = task.sessions_count
 
         # Auto-complete task only if goal reached (or handled manually via separate status update)
         if task.sessions_count >= task.estimated_pomodoros:
-            # You can decide if you want to auto-complete or wait for 'Task Done' button
-            # To allow "Continue" to work, we keep it as IN_PROGRESS until a manual finish
             pass
 
     # ---- ABORTED CASE (Discarded) ----
@@ -137,6 +131,15 @@ def end_session(
     # --- 5. DATA SYNC ---
     db.commit()
     db.refresh(session)
+
+    # --- 6. QUEUE TRAINING SAMPLE (add this) ---
+    # if payload.end_type in (SessionEndType.COMPLETED, SessionEndType.STOPPED):
+    #     try:
+    #         from app.services.training_queue import push_training_sample
+    #         push_training_sample(session, task, db)
+    #     except Exception:
+    #         pass  # never block session end because of Redis
+
     return session
 
 

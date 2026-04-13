@@ -65,6 +65,11 @@ class RLScheduler:
 
             # Only record if the action was valid (slot not full, task exists)
             if not info.get("valid", False):
+                if invalid_streak == 0:
+                    print(
+                        "[rl.predict] invalid action",
+                        {"action": action.tolist(), "task_count": len(tasks)},
+                    )
                 invalid_streak += 1
                 if invalid_streak >= MAX_INVALID_STREAK:
                     # Model is stuck picking invalid actions
@@ -82,7 +87,7 @@ class RLScheduler:
                 real_idx = task_idx - 1
                 if real_idx < len(tasks):
                     task = tasks[real_idx]
-                    slot_name = ["Morning", "Afternoon", "Evening"][slot_idx]
+                    slot_name = ["morning", "afternoon", "evening"][slot_idx]
 
                     # Resolve ID and Name safely
                     t_id = (

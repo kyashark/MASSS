@@ -5,18 +5,18 @@ from app.core.database import Base
 
 
 class Category(str, enum.Enum):
-    CODING = "Coding"
-    MATH = "Math/Logic"
-    LANGUAGE = "Language"
-    CREATIVE_DESIGN = "Creative Design"
-    MEMORIZATION = "Memorization"
-    OTHER = "Other"
+    CODING = "coding"
+    MATH_LOGIC = "math_logic"
+    LANGUAGE = "language"
+    CREATIVE_DESIGN = "creative_design"
+    MEMORIZATION = "memorization"
+    OTHER = "other"
 
 
 class EnergyTime(str, enum.Enum):
-    MORNING = "Morning"
-    AFTERNOON = "Afternoon"
-    EVENING = "Evening"
+    MORNING = "morning"
+    AFTERNOON = "afternoon"
+    EVENING = "evening"
 
 
 class Module(Base):
@@ -24,15 +24,11 @@ class Module(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True, nullable=False)
-
     name = Column(String, nullable=False)
     color = Column(String, default="#E89BAE")
-
     category = Column(SAEnum(Category), default=Category.OTHER, nullable=False)
     energy_time = Column(
         SAEnum(EnergyTime), default=EnergyTime.AFTERNOON, nullable=False
     )
-
-    # Relationships
     exams = relationship("Exam", back_populates="module", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="module", cascade="all, delete-orphan")

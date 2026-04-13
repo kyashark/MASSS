@@ -29,16 +29,15 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
 
   // --- Helpers ---
   const mergeRoutineWithSchedule = (aiSchedule, fullRoutine) => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     const todayName = days[new Date().getDay()];
     const todayRoutine = fullRoutine.filter(item => item.day_of_week === todayName);
 
-    const newSchedule = {
-      Morning: [...(aiSchedule.Morning || [])],
-      Afternoon: [...(aiSchedule.Afternoon || [])],
-      Evening: [...(aiSchedule.Evening || [])]
-    };
-
+const newSchedule = {
+  morning:   [...(aiSchedule.morning   || [])],
+  afternoon: [...(aiSchedule.afternoon || [])],
+  evening:   [...(aiSchedule.evening   || [])],
+};
     todayRoutine.forEach(task => {
       const startHour = parseInt(task.start_time.split(":")[0], 10);
       const fixedTaskObj = {
@@ -101,7 +100,7 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
 
   return (
     <div className="space-y-4 pb-10">
-      {["Morning", "Afternoon", "Evening"].map((period) => {
+      {["morning", "afternoon", "evening"].map((period) => {
         const tasks = schedule[period] || [];
         if (tasks.length === 0) return null;
 
@@ -109,7 +108,7 @@ const HeuristicView = ({ refreshKey, onMenuAction, onStartSession }) => {
           <div key={period} className="border-l-2 border-slate-100 pl-4 py-1">
             <div className="flex items-center gap-2 mb-3">
               {getPeriodIcon(period)}
-              <h3 className="text-sm font-semibold text-slate-600">{period}</h3>
+              <h3 className="text-sm font-semibold text-slate-400">{period.charAt(0).toUpperCase() + period.slice(1)}</h3>
               <span className="text-xs text-slate-400 font-medium px-2 py-0.5 bg-slate-50 rounded-full">{tasks.length} Tasks</span>
             </div>
             <div className="space-y-3">

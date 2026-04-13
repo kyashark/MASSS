@@ -9,7 +9,7 @@ from app.services.scheduling import SchedulingService
 
 router = APIRouter(prefix="/schedule", tags=["AI Scheduler"])
 
-SlotName = Literal["Morning", "Afternoon", "Evening"]
+SlotName = Literal["morning", "afternoon", "evening"]
 
 
 @router.get("/heuristic")
@@ -30,7 +30,7 @@ def get_heuristic_schedule(
 
 @router.get("/rl")
 def get_rl_schedule_endpoint(
-    active_slot: SlotName = "Morning",
+    active_slot: SlotName = "morning",
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):

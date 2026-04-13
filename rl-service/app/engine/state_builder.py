@@ -61,11 +61,10 @@ class StateBuilder:
             if i >= self.cfg.MAX_TASKS:
                 break
 
-            # A. Scalar Features
-            prio_map = {"HIGH": 1.0, "MEDIUM": 0.66, "LOW": 0.33}
-            task_matrix[i, 0] = prio_map.get(
-                str(self._safe_get(task, "priority", "LOW")), 0.33
-            )
+            # Priority — now lowercase
+            prio_map = {"high": 1.0, "medium": 0.66, "low": 0.33}
+            raw_priority = str(self._safe_get(task, "priority", "low")).lower()
+            task_matrix[i, 0] = prio_map.get(raw_priority, 0.33)
 
             task_matrix[i, 1] = (
                 min(
@@ -79,8 +78,6 @@ class StateBuilder:
                 / self.cfg.MAX_DURATION
             )
 
-            # Use shared helper — checks task.deadline first, then task.exam.due_date
-
             deadline_val = (
                 get_effective_deadline(task) if not isinstance(task, dict) else None
             )
@@ -89,7 +86,6 @@ class StateBuilder:
             else:
                 days = self._safe_get(task, "days_until", 30)
 
-            # Guard against None — treat missing deadline as 30 days (neutral urgency)
             if days is None:
                 days = 30
 
@@ -98,40 +94,35 @@ class StateBuilder:
             )
 
             task_matrix[i, 4] = self._safe_get(task, "difficulty", 1) / 5.0
-            task_matrix[i, 5] = (
-                1.0
-                if self._safe_get(task, "status", "PENDING") == "IN_PROGRESS"
-                else 0.0
-            )
 
-            # B. Category One-Hot (6 categories)
-            cat_raw = "Other"
+            # Status — now lowercase
+            raw_status = str(self._safe_get(task, "status", "pending")).lower()
+            task_matrix[i, 5] = 1.0 if raw_status == "in_progress" else 0.0
+
+            # Category — now lowercase with underscores
+            cat_raw = "other"
             if isinstance(task, dict):
-                cat_raw = task.get("category", "Other")
+                cat_raw = task.get("category", "other")
             else:
                 if hasattr(task, "module") and task.module:
-                    cat_raw = getattr(task.module, "category", "Other")
-                    # Use .value for string enums (e.g. "Math/Logic" not "MATH")
+                    cat_raw = getattr(task.module, "category", "other")
                     if hasattr(cat_raw, "value"):
                         cat_raw = cat_raw.value
-                    elif hasattr(cat_raw, "name"):
-                        cat_raw = cat_raw.name
 
-            cat_idx = self.cfg.CATEGORY_MAP.get(str(cat_raw), 5)  # 5 = Other
+            cat_idx = self.cfg.CATEGORY_MAP.get(str(cat_raw).lower(), 5)
             task_matrix[i, 6 + cat_idx] = 1.0
 
-        # C. Environmental Signals
+        # Environmental signals
         flat_tasks = task_matrix.flatten()
 
         slots = np.array(
             [
-                capacity_map.get("Morning", 4.0) / 8.0,  # dim_551
-                capacity_map.get("Afternoon", 4.0) / 8.0,  # dim_552
-                capacity_map.get("Evening", 4.0) / 8.0,  # dim_553
+                capacity_map.get("morning", 4.0) / 8.0,
+                capacity_map.get("afternoon", 4.0) / 8.0,
+                capacity_map.get("evening", 4.0) / 8.0,
             ],
             dtype=np.float32,
         )
-
         # Cognitive Fatigue — exponential time-decay weighted average
         # Ratings are ordered oldest→newest; most recent = Δt=0 → weight=1.0
         # W(Δt) = e^(-0.5 * Δt)  so yesterday=0.60, 2 days ago=0.36, etc.

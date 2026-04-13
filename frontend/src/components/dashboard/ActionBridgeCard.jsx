@@ -1,8 +1,9 @@
 // src/components/ActionBridgeCard/ActionBridgeCard.jsx
 
 import { useRecommendation } from "../../hooks/useRecommendation";
+import { SLOT_LABELS } from "../../constants/enums";
 
-const PRIORITY_COLOR = { HIGH: "text-red-500", MEDIUM: "text-amber-500", LOW: "text-slate-400" };
+const PRIORITY_COLOR = { high: "text-red-500", medium: "text-amber-500", low: "text-slate-400" };
 const DIFF_LABEL = ["", "Very Easy", "Easy", "Medium", "Hard", "Very Hard"];
 const DIFF_COLOR = ["", "text-emerald-500", "text-emerald-500", "text-amber-500", "text-orange-500", "text-red-500"];
 const SIGNAL_META = {
@@ -53,7 +54,7 @@ function ContextPill({ label, value, colorClass, bgClass }) {
 
 // ── main card ─────────────────────────────────────────────────────────────────
 
-export default function ActionBridgeCard({ activeSlot = "Morning", onLaunchSession }) {
+export default function ActionBridgeCard({ activeSlot = "morning", onLaunchSession }) {
   const { rec, status, refetch } = useRecommendation(activeSlot);
 
   const isCrunch = rec?.is_crunch ?? false;
@@ -81,7 +82,7 @@ export default function ActionBridgeCard({ activeSlot = "Morning", onLaunchSessi
             <div className="text-[9px] font-mono font-bold tracking-[2px] text-amber-500 mb-1 uppercase">AI-ACTION BRIDGE</div>
             <div className="font-['Syne'] text-[15px] font-extrabold tracking-tight">Top Recommendation</div>
             <div className="text-[9px] font-mono text-slate-400 mt-[2px]">
-              {activeSlot} slot · <span className="italic">π(a|s) policy selection</span>
+              {SLOT_LABELS[activeSlot] || activeSlot} slot · <span className="italic">π(a|s) policy selection</span>
             </div>
           </div>
 
@@ -112,7 +113,7 @@ export default function ActionBridgeCard({ activeSlot = "Morning", onLaunchSessi
 
         {status === "live" && !rec && (
           <div className="text-center py-8 text-[10px] font-mono text-slate-400 italic border-2 border-dashed border-slate-50 rounded-xl">
-            No actionable tasks found for {activeSlot}.
+            No actionable tasks found for {SLOT_LABELS[activeSlot] || activeSlot}.
           </div>
         )}
 

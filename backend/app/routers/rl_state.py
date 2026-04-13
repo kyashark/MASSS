@@ -8,12 +8,12 @@ from app.services.rl_client import get_rl_state
 
 router = APIRouter(prefix="/rl", tags=["RL State"])
 
-SlotName = Literal["Morning", "Afternoon", "Evening"]
+SlotName = Literal["morning", "afternoon", "evening"]
 
 
 @router.get("/state-vector")
 def get_state_vector(
-    active_slot: SlotName = Query(default="Morning"),
+    active_slot: SlotName = Query(default="morning"),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):

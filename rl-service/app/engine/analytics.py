@@ -20,20 +20,14 @@ from app.engine.config import RLConfig
 
 
 def get_effective_deadline(task: dict) -> Optional[datetime]:
-    """
-    Resolves the most relevant deadline for a task dict.
-    Task dicts have days_until_deadline as an integer.
-    Convert back to datetime for compatibility with existing engine code.
-    """
-    days = task.get("days_until_deadline")
+    days = task.get("days_until")
     if days is None:
         return None
     return datetime.now() + timedelta(days=days)
 
 
 def get_effective_days_until(task: dict) -> Optional[int]:
-    """Returns days until deadline or None if no deadline."""
-    return task.get("days_until_deadline")
+    return task.get("days_until")
 
 
 # ─── Analytics Service ────────────────────────────────────────────────────────
@@ -70,7 +64,7 @@ class UserAnalyticsService:
         work_intensity = self._calculate_work_intensity()
 
         # Build capacity map from slot preferences
-        capacity_map = {"Morning": 4, "Afternoon": 4, "Evening": 4}
+        capacity_map = {"morning": 4, "afternoon": 4, "evening": 4}
         for pref in self.slot_preferences:
             capacity_map[pref["slot_name"]] = pref["max_pomodoros"]
 
@@ -78,9 +72,9 @@ class UserAnalyticsService:
         energy_map = {
             slot: self._calculate_slot_energy(slot, start, end, work_intensity)
             for slot, start, end in [
-                ("Morning", 6, 12),
-                ("Afternoon", 12, 18),
-                ("Evening", 18, 24),
+                ("morning", 6, 12),
+                ("afternoon", 12, 18),
+                ("evening", 18, 24),
             ]
         }
 
@@ -108,7 +102,7 @@ class UserAnalyticsService:
 
         score = 0.0
         for task in self.tasks:
-            days = task.get("days_until_deadline")
+            days = task.get("days_until")
             if days is None:
                 continue
             if days <= 0:
@@ -188,8 +182,8 @@ class UserAnalyticsService:
         today_events = [
             e
             for e in self.weekly_routine
-            if e["day_of_week"] == today_name
-            and e["activity_type"] in ("Class", "Work")
+            if e["day_of_week"] == today_name.lower()  # ← lowercase
+            and e["activity_type"] in ("class", "work")  # ← lowercase
         ]
 
         if not today_events:
@@ -234,7 +228,7 @@ class UserAnalyticsService:
     def _signal_completion_rate(self, sessions: List[dict]) -> float:
         num, den = 0.0, 0.0
         for s in sessions:
-            val = 1.0 if s.get("end_type") == "COMPLETED" else 0.0
+            val = 1.0 if s.get("end_type") == "completed" else 0.0
             score, weight = self._apply_time_decay(s, val)
             num += score
             den += weight
@@ -307,10 +301,10 @@ class UserAnalyticsService:
         return history if history else [3.0]
 
     def _infer_session_quality(self, session: dict) -> float:
-        end_type = session.get("end_type", "ABORTED")
-        if end_type == "COMPLETED":
+        end_type = session.get("end_type", "aborted")
+        if end_type == "completed":  # ← lowercase
             score = 4.5
-        elif end_type == "STOPPED":
+        elif end_type == "stopped":  # ← lowercase
             score = 3.0
         else:
             score = 1.5
@@ -336,12 +330,12 @@ class UserAnalyticsService:
         """
         # Default neutral bias for all known categories
         defaults = {
-            "Coding": 0.5,
-            "Math/Logic": 0.5,
-            "Language": 0.5,
-            "Creative Design": 0.5,
-            "Memorization": 0.5,
-            "Other": 0.5,
+            "coding": 0.5,
+            "math_logic": 0.5,
+            "language": 0.5,
+            "creative_design": 0.5,
+            "memorization": 0.5,
+            "other": 0.5,
         }
         return defaults
 
@@ -358,13 +352,18 @@ class UserAnalyticsService:
         today_events = [
             e
             for e in self.weekly_routine
-            if e["day_of_week"] == today_name and e["activity_type"] != "Sleep"
+            if e["day_of_week"] == today_name.lower()  # ← lowercase
+            and e["activity_type"] != "sleep"  # ← lowercase
         ]
 
         if not today_events:
             return 0.0
 
-        INTENSITY_MAP = {"Class": 1.0, "Work": 0.7, "Habit": 0.3}
+        INTENSITY_MAP = {
+            "class": 1.0,  # ← lowercase
+            "work": 0.7,
+            "habit": 0.3,
+        }
         total_boost = 0.0
 
         for event in today_events:
@@ -388,7 +387,7 @@ class UserAnalyticsService:
             duration_hrs = (end_dt - start_dt).total_seconds() / 3600
             duration_w = min(duration_hrs / 3.0, 1.0)
             decay = exp(-self.cfg.CLASS_FATIGUE_DECAY_RATE * hours_ago)
-            intensity_w = INTENSITY_MAP.get(event.get("activity_type", "Habit"), 0.5)
+            intensity_w = INTENSITY_MAP.get(event.get("activity_type", "habit"), 0.5)
 
             total_boost += decay * duration_w * intensity_w
 
@@ -401,7 +400,8 @@ class UserAnalyticsService:
         class_events = [
             e
             for e in self.weekly_routine
-            if e["day_of_week"] == today_name and e["activity_type"] == "Class"
+            if e["day_of_week"] == today_name.lower()
+            and e["activity_type"] == "class"  # ← lowercase
         ]
 
         ended = []

@@ -2,20 +2,22 @@
 
 import { useState } from "react";
 import { usePolicyAnalytics } from "../../hooks/usePolicyAnalytics";
+import { SLOT_LABELS } from "../../constants/enums";
 
 const SLOT_COLOR = {
-  Morning:   "text-amber-500",
-  Afternoon: "text-sky-500",
-  Evening:   "text-violet-500",
+  morning:   "text-amber-500",
+  afternoon: "text-sky-500",
+  evening:   "text-violet-500",
 };
 
 const SLOT_BG = {
-  Morning:   "bg-amber-500",
-  Afternoon: "bg-sky-500",
-  Evening:   "bg-violet-500",
+  morning:   "bg-amber-500",
+  afternoon: "bg-sky-500",
+  evening:   "bg-violet-500",
 };
 
 const TREND_ICON  = { up: "↑", down: "↓", flat: "→" };
+const TREND_LABEL = { up: "UP", down: "DOWN", flat: "FLAT" };
 const TREND_TEXT  = { up: "text-emerald-500", down: "text-red-500", flat: "text-slate-400" };
 const TREND_BG    = { up: "bg-emerald-50", down: "bg-red-50", flat: "bg-slate-50" };
 const TREND_BORDER= { up: "border-emerald-100", down: "border-red-100", flat: "border-slate-100" };
@@ -80,7 +82,7 @@ function Sparkline({ checkpoints, color, width = 340, height = 52 }) {
 }
 
 // ── Main Card ─────────────────────────────────────────────────────────────────
-export default function PolicyAnalyticsCard({ activeSlot = "Morning" }) {
+export default function PolicyAnalyticsCard({ activeSlot = "morning" }) {
   const { data, status, refetch } = usePolicyAnalytics(activeSlot);
   const [tab, setTab] = useState("drift");
 
@@ -102,13 +104,13 @@ export default function PolicyAnalyticsCard({ activeSlot = "Morning" }) {
           <div>
             <div className="text-[9px] font-mono font-bold tracking-[2px] text-indigo-500 mb-1 uppercase">POLICY ANALYTICS</div>
             <div className="font-['Syne'] text-[15px] font-extrabold tracking-tight">Is the Agent Learning?</div>
-            <div className="text-[9px] font-mono text-slate-400 mt-[2px]">28-day drift · {activeSlot} slot</div>
+            <div className="text-[9px] font-mono text-slate-400 mt-[2px]">28-day drift · {SLOT_LABELS[activeSlot] || activeSlot} slot</div>
           </div>
 
           {summary && (
             <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${lMeta.bg} ${lMeta.border}`}>
               <span className="text-xs">{lMeta.icon}</span>
-              <span className={`text-[8px] font-mono font-black tracking-wider ${lMeta.color}`}>{lMeta.label.toUpperCase()}</span>
+              <span className={`text-[8px] font-mono font-black tracking-wider uppercase ${lMeta.color}`}>{lMeta.label}</span>
             </div>
           )}
         </div>
@@ -174,10 +176,10 @@ export default function PolicyAnalyticsCard({ activeSlot = "Morning" }) {
                       <div className="flex justify-between items-center mb-1.5">
                         <div className="flex items-center gap-2">
                           <div className={`w-1.5 h-1.5 rounded-full ${SLOT_BG[slot]}`} />
-                          <span className="text-[10px] font-mono font-bold text-slate-600">{slot}</span>
+                          <span className="text-[10px] font-mono font-bold text-slate-600">{SLOT_LABELS[slot] || slot}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className={`text-[9px] font-mono font-bold ${TREND_TEXT[info.trend]}`}>{TREND_ICON[info.trend]} {info.trend.toUpperCase()}</span>
+                          <span className={`text-[9px] font-mono font-bold ${TREND_TEXT[info.trend]}`}>{TREND_ICON[info.trend]} {TREND_LABEL[info.trend] || info.trend}</span>
                           <span className={`text-[12px] font-mono font-black ${SLOT_COLOR[slot]}`}>{info.current.toFixed(1)}/5.0</span>
                         </div>
                       </div>

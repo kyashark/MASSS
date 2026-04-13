@@ -141,9 +141,9 @@ def initialize_student_profile(
     current_user=Depends(get_current_user),
 ):
     defaults = {
-        Chronotype.MORNING_BIRD: {"Morning": 6, "Afternoon": 4, "Evening": 2},
-        Chronotype.NIGHT_OWL: {"Morning": 2, "Afternoon": 4, "Evening": 6},
-        Chronotype.BALANCED: {"Morning": 4, "Afternoon": 4, "Evening": 4},
+        Chronotype.MORNING_BIRD: {"morning": 6, "afternoon": 4, "evening": 2},
+        Chronotype.NIGHT_OWL: {"morning": 2, "afternoon": 4, "evening": 6},
+        Chronotype.BALANCED: {"morning": 4, "afternoon": 4, "evening": 4},
     }
     selected = defaults.get(chronotype)
     for slot, val in selected.items():

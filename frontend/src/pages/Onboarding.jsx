@@ -1,36 +1,41 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import {
+  ACTIVITY_LABELS,
+  ACTIVITY_TYPES,
+  DAY_LABELS,
+  DAYS_OF_WEEK,
+} from "../constants/enums";
 
 // ── Step Data ─────────────────────────────────────────────────────────────────
 
 const CHRONOTYPES = [
   {
-    id: "MORNING_BIRD",
-    label: "Morning Bird",
-    icon: "☀️",
+    id:          "morning_bird",   // ← lowercase with underscore
+    label:       "Morning Bird",
+    icon:        "☀️",
     description: "I focus best before noon",
-    slots: { morning: 6, afternoon: 3, evening: 1 },
+    slots: { morning: 6, afternoon: 3, evening: 1 },   // ← lowercase
   },
   {
-    id: "BALANCED",
-    label: "Balanced",
-    icon: "⚖️",
+    id:          "balanced",
+    label:       "Balanced",
+    icon:        "⚖️",
     description: "I study equally well throughout the day",
     slots: { morning: 4, afternoon: 4, evening: 4 },
   },
   {
-    id: "NIGHT_OWL",
-    label: "Night Owl",
-    icon: "🌙",
+    id:          "night_owl",
+    label:       "Night Owl",
+    icon:        "🌙",
     description: "I focus best in the afternoon and evening",
     slots: { morning: 1, afternoon: 4, evening: 6 },
   },
 ];
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS = DAYS_OF_WEEK;
 const DAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const ACTIVITY_TYPES = ["Class", "Work", "Habit", "Sleep"];
 
 // ── Sub Components ────────────────────────────────────────────────────────────
 
@@ -96,7 +101,7 @@ function ChronotypeStep({ value, onChange }) {
 function RoutineStep({ events, onChange }) {
   const [form, setForm] = useState({
     name: "",
-    activity_type: "Class",
+    activity_type: "class",
     days: [],
     start_time: "09:00",
     end_time: "10:00",
@@ -116,7 +121,7 @@ function RoutineStep({ events, onChange }) {
     onChange([...events, { ...form, id: Date.now() }]);
     setForm({
       name: "",
-      activity_type: "Class",
+      activity_type: "class",
       days: [],
       start_time: "09:00",
       end_time: "10:00",
@@ -155,8 +160,8 @@ function RoutineStep({ events, onChange }) {
             }
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none bg-white"
           >
-            {ACTIVITY_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
+            {ACTIVITY_TYPES.map((activity) => (
+              <option key={activity} value={activity}>{ACTIVITY_LABELS[activity]}</option>
             ))}
           </select>
 
@@ -222,7 +227,7 @@ function RoutineStep({ events, onChange }) {
                   {event.name}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {event.days.join(", ")} · {event.start_time}–{event.end_time}
+                  {event.days.map((d) => DAY_LABELS[d] || d).join(", ")} · {event.start_time}–{event.end_time}
                 </div>
               </div>
               <button
@@ -242,11 +247,11 @@ function RoutineStep({ events, onChange }) {
 // ── Step 3: Capacity ──────────────────────────────────────────────────────────
 
 function CapacityStep({ capacity, onChange }) {
-  const slots = [
-    { key: "morning", label: "Morning", icon: "☀️", hours: "6am – 12pm" },
-    { key: "afternoon", label: "Afternoon", icon: "🌤️", hours: "12pm – 6pm" },
-    { key: "evening", label: "Evening", icon: "🌙", hours: "6pm – 12am" },
-  ];
+const slots = [
+  { key: "morning",   label: "Morning",   icon: "☀️", hours: "6am – 12pm" },
+  { key: "afternoon", label: "Afternoon", icon: "🌤️", hours: "12pm – 6pm" },
+  { key: "evening",   label: "Evening",   icon: "🌙", hours: "6pm – 12am" },
+];
 
   return (
     <div>

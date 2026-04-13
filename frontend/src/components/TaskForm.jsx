@@ -3,21 +3,22 @@ import React, { useState, useEffect } from "react";
 import { X, Calendar, Clock, BookOpen, BarChart } from "lucide-react"; // Added BarChart icon
 import { createTask, updateTask } from "../api/tasks";
 import { fetchExamsByModule } from "../api/exams";
+import { PRIORITIES, PRIORITY_LABELS } from "../constants/enums";
 
 const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
   const [loading, setLoading] = useState(false);
   const [exams, setExams] = useState([]);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    estimated_pomodoros: 1,
-    priority: "Medium",
-    difficulty: 3, // Default to 3
-    deadline: "",
-    is_fixed: false,
-    exam_id: "",
-  });
+const [formData, setFormData] = useState({
+  name:                "",
+  description:         "",
+  estimated_pomodoros: 1,
+  priority:            "medium",   // ← lowercase
+  difficulty:          3,
+  deadline:            "",
+  is_fixed:            false,
+  exam_id:             "",
+});
 
   // 1. Fetch Exams & Populate Form for Editing
   useEffect(() => {
@@ -31,7 +32,7 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
           name: taskToEdit.name || "",
           description: taskToEdit.description || "",
           estimated_pomodoros: taskToEdit.estimated_pomodoros || 1,
-          priority: taskToEdit.priority || "Medium",
+          priority: taskToEdit.priority || "medium",
           difficulty: taskToEdit.difficulty || 3, // Populate difficulty
           deadline: taskToEdit.deadline
             ? new Date(taskToEdit.deadline).toISOString().slice(0, 16)
@@ -44,7 +45,7 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
           name: "",
           description: "",
           estimated_pomodoros: 1,
-          priority: "Medium",
+          priority: "medium",
           difficulty: 3, // Reset to 3
           deadline: "",
           is_fixed: false,
@@ -61,14 +62,13 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
     setLoading(true);
 
     try {
-      const payload = {
-        ...formData,
-        module_id: moduleId,
-        exam_id: formData.exam_id ? parseInt(formData.exam_id) : null,
-        deadline: formData.deadline
-          ? new Date(formData.deadline).toISOString()
-          : null,
-      };
+const payload = {
+  ...formData,
+  module_id: moduleId,
+  exam_id:   formData.exam_id ? parseInt(formData.exam_id) : null,
+  deadline:  formData.deadline ? new Date(formData.deadline).toISOString() : null,
+  
+};
       let result;
       if (taskToEdit) {
         result = await updateTask(taskToEdit.id, payload);
@@ -187,17 +187,16 @@ const TaskForm = ({ isOpen, onClose, moduleId, onTaskCreated, taskToEdit }) => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Priority
               </label>
-              <select
-                value={formData.priority}
-                onChange={(e) =>
-                  setFormData({ ...formData, priority: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
+   <select
+  value={formData.priority}
+  onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+>
+  {PRIORITIES.map((priority) => (
+    <option key={priority} value={priority}>
+      {PRIORITY_LABELS[priority]}
+    </option>
+  ))}
+</select>
             </div>
 
             {/* Est. Pomodoros */}

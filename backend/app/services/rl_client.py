@@ -30,21 +30,12 @@ RL_HEADERS = {
 
 
 # ─── Data Fetchers ────────────────────────────────────────────────────────────
-
-
 def _fetch_tasks(user_id: int, db: Session) -> list:
-    """
-    Fetch pending and in-progress tasks for this user.
-    Serialize into the format the RL service contract expects.
-    """
     from sqlalchemy.orm import joinedload
 
     tasks = (
         db.query(Task)
-        .options(
-            joinedload(Task.exam),
-            joinedload(Task.module),
-        )
+        .options(joinedload(Task.exam), joinedload(Task.module))
         .filter(
             Task.user_id == user_id,
             Task.status.in_([TaskStatus.PENDING, TaskStatus.IN_PROGRESS]),
@@ -54,55 +45,44 @@ def _fetch_tasks(user_id: int, db: Session) -> list:
 
     result = []
     for task in tasks:
-        # Resolve days until deadline
-        # Check task.deadline first, then exam.due_date
-
         days_until = None
-
         if task.deadline:
             days_until = (task.deadline - datetime.now()).days
         elif task.exam and task.exam.due_date:
             due = task.exam.due_date
-            # due_date is a date object — convert to datetime for subtraction
             if hasattr(due, "hour"):
                 days_until = (due - datetime.now()).days
             else:
                 due_dt = datetime.combine(due, datetime.min.time())
                 days_until = (due_dt - datetime.now()).days
 
-        # Resolve category from module
-        category = "Other"
+        # Category — enum value is now lowercase with underscores
+        category = "other"
         if task.module and task.module.category:
             cat = task.module.category
             category = cat.value if hasattr(cat, "value") else str(cat)
 
-        # Normalize priority to uppercase string
-        priority = task.priority
-        if hasattr(priority, "value"):
-            priority = priority.value
-        priority = str(priority).upper()
-
-        # Normalize status to string
-        status = task.status
-        if hasattr(status, "value"):
-            status = status.value
-        status = str(status)
-
-        print(
-            f"[DEBUG] Task {task.id} priority raw={task.priority} normalized={priority}"
+        # Priority and status — enum values now already lowercase
+        priority = (
+            task.priority.value
+            if hasattr(task.priority, "value")
+            else str(task.priority)
+        )
+        status = (
+            task.status.value if hasattr(task.status, "value") else str(task.status)
         )
 
         result.append(
             {
                 "id": task.id,
                 "name": task.name,
-                "priority": priority,
+                "priority": priority,  # "high", "medium", "low"
                 "difficulty": task.difficulty or 3,
-                "category": category,
+                "category": category,  # "coding", "math_logic", etc.
                 "estimated_pomodoros": task.estimated_pomodoros or 1,
                 "sessions_count": task.sessions_count or 0,
                 "days_until": days_until,
-                "status": status,
+                "status": status,  # "pending", "in_progress"
             }
         )
 
@@ -110,12 +90,7 @@ def _fetch_tasks(user_id: int, db: Session) -> list:
 
 
 def _fetch_session_history(user_id: int, db: Session) -> list:
-    """
-    Fetch the last 14 days of session history for this user.
-    The RL service uses this to calculate fatigue and energy.
-    """
     cutoff = datetime.now() - timedelta(days=14)
-
     sessions = (
         db.query(PomodoroSession)
         .filter(
@@ -129,22 +104,20 @@ def _fetch_session_history(user_id: int, db: Session) -> list:
 
     result = []
     for s in sessions:
-        # Normalize end_type
-        end_type = s.end_type
-        if hasattr(end_type, "value"):
-            end_type = end_type.value
-        end_type = str(end_type) if end_type else "ABORTED"
+        # Enum values now already lowercase
+        end_type = (
+            s.end_type.value
+            if hasattr(s.end_type, "value")
+            else str(s.end_type or "aborted")
+        ).lower()
 
-        # Normalize slot_type
-        slot_type = s.slot_type or "Morning"
-        if hasattr(slot_type, "value"):
-            slot_type = slot_type.value
+        slot_type = (s.slot_type or "morning").lower()
 
         result.append(
             {
                 "focus_rating": float(s.focus_rating) if s.focus_rating else None,
-                "end_type": end_type,
-                "slot_type": slot_type,
+                "end_type": end_type,  # "completed", "stopped", etc.
+                "slot_type": slot_type,  # "morning", "afternoon", "evening"
                 "duration_minutes": float(s.duration_minutes or 0),
                 "started_at": s.start_time.isoformat() if s.start_time else "",
             }
@@ -154,58 +127,46 @@ def _fetch_session_history(user_id: int, db: Session) -> list:
 
 
 def _fetch_slot_preferences(user_id: int, db: Session) -> list:
-    """
-    Fetch the user's slot capacity preferences.
-    Defaults to 4 pomodoros per slot if none are set.
-    """
     prefs = db.query(SlotPreference).filter(SlotPreference.user_id == user_id).all()
 
     if not prefs:
-        # Return sensible defaults if user has not set preferences yet
         return [
-            {"slot_name": "Morning", "max_pomodoros": 4},
-            {"slot_name": "Afternoon", "max_pomodoros": 4},
-            {"slot_name": "Evening", "max_pomodoros": 4},
+            {"slot_name": "morning", "max_pomodoros": 4},
+            {"slot_name": "afternoon", "max_pomodoros": 4},
+            {"slot_name": "evening", "max_pomodoros": 4},
         ]
 
     result = []
     for p in prefs:
-        slot_name = p.slot_name
-        if hasattr(slot_name, "value"):
-            slot_name = slot_name.value
-        result.append(
-            {
-                "slot_name": str(slot_name),
-                "max_pomodoros": p.max_pomodoros or 4,
-            }
+        slot_name = (
+            p.slot_name.value if hasattr(p.slot_name, "value") else str(p.slot_name)
         )
+        result.append({"slot_name": slot_name, "max_pomodoros": p.max_pomodoros or 4})
 
     return result
 
 
 def _fetch_weekly_routine(user_id: int, db: Session) -> list:
-    """
-    Fetch the user's weekly routine events.
-    Used by the RL service for post-class fatigue calculation.
-    """
     events = db.query(WeeklyRoutine).filter(WeeklyRoutine.user_id == user_id).all()
 
     result = []
     for e in events:
-        # Normalize enums to strings
-        activity_type = e.activity_type
-        if hasattr(activity_type, "value"):
-            activity_type = activity_type.value
-
-        day_of_week = e.day_of_week
-        if hasattr(day_of_week, "value"):
-            day_of_week = day_of_week.value
+        activity_type = (
+            e.activity_type.value
+            if hasattr(e.activity_type, "value")
+            else str(e.activity_type)
+        )
+        day_of_week = (
+            e.day_of_week.value
+            if hasattr(e.day_of_week, "value")
+            else str(e.day_of_week)
+        )
 
         result.append(
             {
                 "name": e.name,
-                "activity_type": str(activity_type),
-                "day_of_week": str(day_of_week),
+                "activity_type": activity_type,  # "class", "sleep", "habit", "work"
+                "day_of_week": day_of_week,  # "monday", "tuesday", etc.
                 "start_time": e.start_time.strftime("%H:%M")
                 if e.start_time
                 else "00:00",
@@ -219,7 +180,7 @@ def _fetch_weekly_routine(user_id: int, db: Session) -> list:
 def _build_request_body(
     user_id: int,
     db: Session,
-    active_slot: str = "Morning",
+    active_slot: str = "morning",
     include_tasks: bool = True,
 ) -> dict:
     """
@@ -243,7 +204,7 @@ def _build_request_body(
 # ─── Public Functions Called by Routers ──────────────────────────────────────
 
 
-def get_rl_schedule(user_id: int, db: Session, active_slot: str = "Morning") -> dict:
+def get_rl_schedule(user_id: int, db: Session, active_slot: str = "morning") -> dict:
     """
     Call the RL service to generate a daily schedule.
     Returns the schedule dict or a fallback empty schedule on error.
@@ -273,7 +234,7 @@ def get_rl_schedule(user_id: int, db: Session, active_slot: str = "Morning") -> 
         return _fallback_schedule(f"RL service error: {e.response.status_code}")
 
 
-def get_rl_state(user_id: int, db: Session, active_slot: str = "Morning") -> dict:
+def get_rl_state(user_id: int, db: Session, active_slot: str = "morning") -> dict:
     """
     Call the RL service for the state vector (dashboard cards).
     Returns state dict or empty dict on error.
@@ -318,10 +279,10 @@ def _fallback_schedule(reason: str) -> dict:
     The frontend handles empty schedules gracefully.
     """
     return {
-        "Morning": [],
-        "Afternoon": [],
-        "Evening": [],
-        "strategy_used": "UNAVAILABLE",
+        "morning": [],
+        "afternoon": [],
+        "evening": [],
+        "strategy_used": "unavailable",
         "work_intensity": 0.0,
         "error": reason,
     }

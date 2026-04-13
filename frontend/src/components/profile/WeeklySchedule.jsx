@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Calendar, Edit2, Trash2, BookOpen, Moon, Briefcase, Activity } from 'lucide-react';
 import { deleteRoutineEvent } from '../../api/profile';
+import { DAY_LABELS, DAYS_OF_WEEK } from '../../constants/enums';
 
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS = DAYS_OF_WEEK;
 
 const ACTIVITY_META = {
-  Class:  { icon: BookOpen,  color: "#6366f1", bg: "#eef2ff" },
-  Sleep:  { icon: Moon,      color: "#8b5cf6", bg: "#f5f3ff" },
-  Work:   { icon: Briefcase, color: "#f59e0b", bg: "#fffbeb" },
-  Habit:  { icon: Activity,  color: "#10b981", bg: "#ecfdf5" },
+  class:  { icon: BookOpen,  color: "#6366f1", bg: "#eef2ff" },
+  sleep:  { icon: Moon,      color: "#8b5cf6", bg: "#f5f3ff" },
+  work:   { icon: Briefcase, color: "#f59e0b", bg: "#fffbeb" },
+  habit:  { icon: Activity,  color: "#10b981", bg: "#ecfdf5" },
 };
 
 const WeeklySchedule = ({ events, onEdit, onDelete }) => {
@@ -73,11 +74,11 @@ const WeeklySchedule = ({ events, onEdit, onDelete }) => {
                   color: "#94a3b8", fontWeight: 700,
                   textTransform: "uppercase", letterSpacing: 2, marginBottom: 8,
                 }}>
-                  {day}
+                  {DAY_LABELS[day] || day}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {dayEvents.map(event => {
-                    const meta = ACTIVITY_META[event.activity_type] || ACTIVITY_META.Habit;
+                    const meta = ACTIVITY_META[event.activity_type] || ACTIVITY_META.habit;
                     const Icon = meta.icon;
                     return (
                       <div key={event.id} style={{

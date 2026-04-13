@@ -6,7 +6,7 @@ import axiosClient from "../api/axiosClient";
 const USER_ID    = 1;
 const POLL_EVERY = 20_000;
 
-export function useGapAnalysis(activeSlot = "Morning") {
+export function useGapAnalysis(activeSlot = "morning") {
   const [data,   setData]   = useState(null);
   const [status, setStatus] = useState("loading");
 

@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useActionDistribution } from "../../hooks/useActionDistribution";
+import { SLOT_LABELS } from "../../constants/enums";
 
-const PRIORITY_COLOR = { HIGH: "text-red-500", MEDIUM: "text-amber-500", LOW: "text-slate-400" };
+const PRIORITY_COLOR = { high: "text-red-500", medium: "text-amber-500", low: "text-slate-400" };
 const DIFF_LABEL     = ["", "Very Easy", "Easy", "Medium", "Hard", "Very Hard"];
 const DIFF_COLOR     = ["", "text-emerald-500", "text-emerald-500", "text-amber-500", "text-orange-500", "text-red-500"];
 
@@ -151,7 +152,7 @@ function ActionRow({ action, prevAction, expanded, onToggle, index }) {
   );
 }
 
-export default function ActionProbCard({ activeSlot = "Morning" }) {
+export default function ActionProbCard({ activeSlot = "morning" }) {
   const { data, prevData, status, lastUpdate } = useActionDistribution(activeSlot);
   const [expandedId, setExpandedId] = useState(null);
 
@@ -183,7 +184,7 @@ export default function ActionProbCard({ activeSlot = "Morning" }) {
         <div className="flex justify-between items-start mb-5">
           <div>
             <div className="text-[9px] font-mono font-bold tracking-[2px] text-amber-500 mb-1 uppercase">ACTION PROBABILITY DISTRIBUTION</div>
-            <div className="font-['Syne'] text-[15px] font-extrabold tracking-tight text-slate-900 uppercase">π(a|s) · {activeSlot} Cycle</div>
+            <div className="font-['Syne'] text-[15px] font-extrabold tracking-tight text-slate-900 uppercase">π(a|s) · {SLOT_LABELS[activeSlot] || activeSlot} Cycle</div>
             <div className="text-[9px] font-mono text-slate-900 mt-1 uppercase tracking-tighter">
               {data?.total_candidates ?? "—"} Candidates · Softmax T={data?.temperature ?? "—"}
             </div>

@@ -12,10 +12,10 @@ class ScheduledTaskOutput(BaseModel):
 
 
 class ScheduleResponse(BaseModel):
-    Morning: List[ScheduledTaskOutput] = []
-    Afternoon: List[ScheduledTaskOutput] = []
-    Evening: List[ScheduledTaskOutput] = []
-    strategy_used: str  # RL_PPO or HEURISTIC_FALLBACK
+    morning: List[ScheduledTaskOutput] = []
+    afternoon: List[ScheduledTaskOutput] = []
+    evening: List[ScheduledTaskOutput] = []
+    strategy_used: str
     work_intensity: float
 
 

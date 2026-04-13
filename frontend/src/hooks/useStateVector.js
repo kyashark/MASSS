@@ -6,9 +6,9 @@ const POLL_MS = 8000;
 // Helper to match backend slot hours
 const getCurrentSlot = () => {
   const hour = new Date().getHours();
-  if (hour >= 6 && hour < 12) return "Morning";
-  if (hour >= 12 && hour < 18) return "Afternoon";
-  return "Evening";
+  if (hour >= 6 && hour < 12) return "morning";
+  if (hour >= 12 && hour < 18) return "afternoon";
+  return "evening";
 };
 
 export function useStateVector(initialSlot) {

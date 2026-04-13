@@ -102,12 +102,13 @@ class RewardEngine:
             reward += 5.0 * urgency_multiplier
 
         # 8. Momentum
-        status = self._safe_get(task, "status", "PENDING")
+        status = self._safe_get(task, "status", "pending")
         if hasattr(status, "value"):
             status = status.value
         elif hasattr(status, "name"):
             status = status.name
-        if status == "IN_PROGRESS":
+        # Normalize to lowercase for comparison
+        if str(status).lower() == "in_progress":
             reward += 5.0
 
         return reward

@@ -10,19 +10,22 @@ from app.core.config import settings
 MODEL_DIR = Path(settings.MODEL_DIR)
 
 
-def train_agent():
-    dummy_tasks = []
+def train_agent(profiles: list = None):
+    import random
+
+    # Full task pool — 15 tasks
+    all_dummy_tasks = []
     for i in range(15):
         if i < 4:
-            prio, diff, days, pomo, cat = "HIGH", 4, 2, 2, "Math/Logic"
+            prio, diff, days, pomo, cat = "high", 4, 2, 2, "math_logic"
         elif i < 8:
-            prio, diff, days, pomo, cat = "MEDIUM", 3, 7, 2, "Coding"
+            prio, diff, days, pomo, cat = "medium", 3, 7, 2, "coding"
         elif i < 12:
-            prio, diff, days, pomo, cat = "LOW", 2, 20, 2, "Memorization"
+            prio, diff, days, pomo, cat = "low", 2, 20, 2, "memorization"
         else:
-            prio, diff, days, pomo, cat = "MEDIUM", 2, 14, 2, "Language"
+            prio, diff, days, pomo, cat = "medium", 2, 14, 2, "language"
 
-        dummy_tasks.append(
+        all_dummy_tasks.append(
             {
                 "id": i,
                 "name": f"Task {i}",
@@ -32,54 +35,56 @@ def train_agent():
                 "estimated_pomodoros": pomo,
                 "sessions_count": 0,
                 "days_until": days,
-                "status": "PENDING",
+                "status": "pending",
             }
         )
 
-    profiles = [
-        {  # Morning person
-            "work_intensity": 0.9,
-            "energy_map": {"Morning": 4.5, "Afternoon": 3.0, "Evening": 2.0},
-            "recent_ratings": [4, 5, 4, 3, 4],
-        },
-        {  # Afternoon person
-            "work_intensity": 0.5,
-            "energy_map": {"Morning": 2.5, "Afternoon": 4.5, "Evening": 3.0},
-            "recent_ratings": [3, 3, 4, 4, 3],
-        },
-        {  # Evening person
-            "work_intensity": 0.3,
-            "energy_map": {"Morning": 2.0, "Afternoon": 3.0, "Evening": 4.5},
-            "recent_ratings": [2, 3, 3, 4, 5],
-        },
-        {  # Morning person — post 9AM lecture
-            "work_intensity": 0.7,
-            "energy_map": {"Morning": 2.0, "Afternoon": 3.5, "Evening": 3.0},
-            "recent_ratings": [2, 2, 3, 3, 2],  # low — tired after class
-            "post_class_fatigue": 0.8,
-        },
-        {  # Afternoon person — post 2PM lab
-            "work_intensity": 0.9,
-            "energy_map": {"Morning": 3.0, "Afternoon": 1.5, "Evening": 4.0},
-            "recent_ratings": [3, 2, 2, 1, 2],
-            "post_class_fatigue": 0.9,
-        },
-        {  # Evening person — free morning
-            "work_intensity": 0.4,
-            "energy_map": {"Morning": 4.0, "Afternoon": 3.5, "Evening": 4.5},
-            "recent_ratings": [4, 5, 4, 4, 5],
-            "post_class_fatigue": 0.0,
-        },
-    ]
+    if profiles is None:
+        profiles = [
+            {
+                "work_intensity": 0.9,
+                "energy_map": {"morning": 4.5, "afternoon": 3.0, "evening": 2.0},
+                "recent_ratings": [4, 5, 4, 3, 4],
+            },
+            {
+                "work_intensity": 0.5,
+                "energy_map": {"morning": 2.5, "afternoon": 4.5, "evening": 3.0},
+                "recent_ratings": [3, 3, 4, 4, 3],
+            },
+            {
+                "work_intensity": 0.3,
+                "energy_map": {"morning": 2.0, "afternoon": 3.0, "evening": 4.5},
+                "recent_ratings": [2, 3, 3, 4, 5],
+            },
+        ]
 
-    for idx, profile in enumerate(profiles):
+    # ── Expand profiles to include small task count variants ──────────────────
+    # For each profile, also train with 1, 2, 3, 5 task subsets
+    # This teaches the model that valid indices can be small numbers
+    expanded_profiles = []
+    task_counts = [1, 2, 3, 5, 8, 15]
+
+    for profile in profiles:
+        for count in task_counts:
+            subset = random.sample(all_dummy_tasks, min(count, len(all_dummy_tasks)))
+            expanded_profiles.append(
+                {
+                    **profile,
+                    "_task_subset": subset,
+                }
+            )
+
+    for idx, profile in enumerate(expanded_profiles):
+        task_subset = profile.pop("_task_subset", all_dummy_tasks)
+
         print(f"\n{'=' * 50}")
         print(
-            f"Training profile {idx + 1}/{len(profiles)}: best_slot={max(profile['energy_map'], key=profile['energy_map'].get)}"
+            f"Training profile {idx + 1}/{len(expanded_profiles)}: "
+            f"tasks={len(task_subset)}, "
+            f"best_slot={max(profile['energy_map'], key=profile['energy_map'].get)}"
         )
 
-        env = StudentSchedulingEnv(profile, dummy_tasks)
-        print(f"Observation space: {env.observation_space.shape}")
+        env = StudentSchedulingEnv(profile, task_subset)
 
         if idx == 0:
             model = PPO(
@@ -93,7 +98,7 @@ def train_agent():
         else:
             model.set_env(env)
 
-        model.learn(total_timesteps=100000, reset_num_timesteps=(idx == 0))
+        model.learn(total_timesteps=50000, reset_num_timesteps=(idx == 0))
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     save_path = os.path.join(MODEL_DIR, f"ppo_scheduler_{timestamp}")

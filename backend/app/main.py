@@ -43,7 +43,7 @@ app.include_router(session_router, prefix="/api")
 app.include_router(profile_router, prefix="/api")
 app.include_router(schedule_router, prefix="/api")
 app.include_router(rl_state_router, prefix="/api")
-app.include_router(stats_router, prefix="/api/stats")
+app.include_router(stats_router, prefix="/api")
 app.include_router(onboarding_router, prefix="/api")
 
 

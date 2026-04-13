@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { EXAM_TYPES, EXAM_TYPE_LABELS } from "../constants/enums";
 
 const ExamForm = ({ moduleId, exam, onCreated, onUpdated, onCancel }) => {
   const [name, setName] = useState(exam?.name || "");
-  // Default to "Final" or your preferred default from the enum
-  const [examType, setExamType] = useState(exam?.exam_type || "Final");
+  const [examType, setExamType] = useState(exam?.exam_type || "final");
   const [dueDate, setDueDate] = useState(exam?.due_date || "");
   const [weight, setWeight] = useState(exam?.weight || 10);
   const [loading, setLoading] = useState(false);
@@ -55,12 +55,9 @@ const ExamForm = ({ moduleId, exam, onCreated, onUpdated, onCancel }) => {
         onChange={(e) => setExamType(e.target.value)}
         className="px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-gray-400"
       >
-        <option value="Final">Final</option>
-        <option value="Midterm">Midterm</option>
-        <option value="Quiz">Quiz</option>
-        <option value="Assignment">Assignment</option>
-        <option value="Presentation">Presentation</option>
-        <option value="Other">Other</option>
+        {EXAM_TYPES.map((type) => (
+          <option key={type} value={type}>{EXAM_TYPE_LABELS[type]}</option>
+        ))}
       </select>
 
       <input

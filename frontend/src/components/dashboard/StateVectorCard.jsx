@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useStateVector } from "../../hooks/useStateVector";
+import { SLOT_LABELS } from "../../constants/enums";
 
-const SLOTS = ["Morning", "Afternoon", "Evening"];
+const SLOTS = ["morning", "afternoon", "evening"];
 const SLOT_META = {
-  Morning:   { icon: "☀️", hours: "06:00–12:00" },
-  Afternoon: { icon: "🌤️", hours: "12:00–18:00" },
-  Evening:   { icon: "🌙", hours: "18:00–24:00" },
+  morning:   { icon: "☀️", hours: "06:00–12:00" },
+  afternoon: { icon: "🌤️", hours: "12:00–18:00" },
+  evening:   { icon: "🌙", hours: "18:00–24:00" },
 };
 
 // Helper Functions for Dynamic Coloring
@@ -129,7 +130,7 @@ export default function StateVectorCard({ initialSlot, onSlotChange }) {
             <div className="text-slate-400 text-[10px] font-semibold mb-1 uppercase tracking-tighter">What AI Sees</div>
             <div className="text-amber-500 text-[9px] font-mono font-bold tracking-[2px] mb-1 uppercase">Current State Vector</div>
             <div className="flex items-center gap-[6px]">
-              <div className="font-['Syne'] text-[15px] font-extrabold tracking-tight">{activeSlot}</div>
+              <div className="font-['Syne'] text-[15px] font-extrabold tracking-tight">{SLOT_LABELS[activeSlot] || activeSlot}</div>
               {isLive && (
                 <span className="animate-sv-live text-[7px] text-emerald-500 border border-emerald-100 px-1 py-[1px] rounded-[4px] bg-emerald-50/30 font-bold uppercase">
                   Active Influence
@@ -165,7 +166,7 @@ export default function StateVectorCard({ initialSlot, onSlotChange }) {
                 }`}
               >
                 <div className="text-[16px] mb-[2px]">{SLOT_META[slot].icon}</div>
-                <div className={`text-[9px] font-mono ${active ? 'text-amber-500 font-bold' : 'text-slate-500'}`}>{slot}</div>
+                <div className={`text-[9px] font-mono ${active ? 'text-amber-500 font-bold' : 'text-slate-500'}`}>{SLOT_LABELS[slot] || slot}</div>
                 <div className="text-[8px] font-mono text-slate-400 mb-[5px]">{SLOT_META[slot].hours}</div>
                 <div className={`w-[6px] h-[6px] rounded-full mx-auto ${dcBg} ${active ? 'shadow-[0_0_7px_rgba(245,158,11,0.5)]' : 'opacity-30'}`} />
               </button>

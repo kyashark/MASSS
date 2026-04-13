@@ -89,18 +89,19 @@ def complete_onboarding(
     # Map chronotype to default energy scores
     # These seed the RL inferred_energy_score before real data exists
     chronotype_energy = {
-        "MORNING_BIRD": {"Morning": 0.85, "Afternoon": 0.55, "Evening": 0.30},
-        "NIGHT_OWL": {"Morning": 0.30, "Afternoon": 0.55, "Evening": 0.85},
-        "BALANCED": {"Morning": 0.60, "Afternoon": 0.60, "Evening": 0.60},
+        "morning_bird": {"morning": 0.85, "afternoon": 0.55, "evening": 0.30},
+        "night_owl": {"morning": 0.30, "afternoon": 0.55, "evening": 0.85},
+        "balanced": {"morning": 0.60, "afternoon": 0.60, "evening": 0.60},
     }
+
     energy_defaults = chronotype_energy.get(
-        payload.chronotype, chronotype_energy["BALANCED"]
+        payload.chronotype, chronotype_energy["balanced"]
     )
 
     slot_capacities = {
-        "Morning": payload.capacity.morning,
-        "Afternoon": payload.capacity.afternoon,
-        "Evening": payload.capacity.evening,
+        "morning": payload.capacity.morning,
+        "afternoon": payload.capacity.afternoon,
+        "evening": payload.capacity.evening,
     }
 
     for slot_name, capacity in slot_capacities.items():
@@ -181,9 +182,9 @@ def skip_onboarding(
     db.query(SlotPreference).filter(SlotPreference.user_id == current_user.id).delete()
 
     for slot_name, energy in [
-        ("Morning", 0.6),
-        ("Afternoon", 0.6),
-        ("Evening", 0.6),
+        ("morning", 0.6),
+        ("afternoon", 0.6),
+        ("evening", 0.6),
     ]:
         pref = SlotPreference(
             user_id=current_user.id,

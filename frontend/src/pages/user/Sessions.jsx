@@ -39,10 +39,10 @@ const Sessions = () => {
 
   const getStatusBadge = (type) => {
     const styles = {
-      COMPLETED: "bg-green-100 text-green-800 border-green-200",
-      STOPPED: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      ABORTED: "bg-red-100 text-red-800 border-red-200",
-      SKIPPED: "bg-gray-100 text-gray-600 border-gray-200",
+      completed: "bg-green-100 text-green-800 border-green-200",
+      stopped: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      aborted: "bg-red-100 text-red-800 border-red-200",
+      skipped: "bg-gray-100 text-gray-600 border-gray-200",
     };
     
     const style = styles[type] || "bg-gray-100 text-gray-800";
