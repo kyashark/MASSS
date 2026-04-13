@@ -1,6 +1,6 @@
-import enum
 from sqlalchemy import Column, Float, Integer, String, Time, Enum as SAEnum, Boolean
 from app.core.database import Base
+import enum
 
 
 class DayOfWeek(str, enum.Enum):
@@ -50,6 +50,9 @@ class SlotPreference(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True, nullable=False)
     slot_name = Column(SAEnum(SlotName), nullable=False)
+    slot_label = Column(String, nullable=True)
+    start_time = Column(Time, nullable=True)
+    end_time = Column(Time, nullable=True)
     max_pomodoros = Column(Integer, default=4)
     inferred_energy_score = Column(Float, default=0.5)
     is_preferred = Column(Boolean, default=False)
