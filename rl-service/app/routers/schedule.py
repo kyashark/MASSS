@@ -127,7 +127,7 @@ def generate_schedule(request: ScheduleRequest):
                     "allocation_type": "sticky_rule",
                 },
             )
-            if result["strategy_used"] == "heuristic_fallback":
+            if result["strategy_used"] in ("heuristic_fallback", "priority_fallback"):
                 result["strategy_used"] = "rl_ppo"
 
     return result
