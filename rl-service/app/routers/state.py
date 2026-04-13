@@ -45,7 +45,7 @@ def get_state_vector(request: StateRequest):
     work_intensity = analytics._calculate_work_intensity()
 
     slot_fatigue = {
-        slot: analytics._calculate_slot_cognitive_fatigue(slot, int(start), int(end))
+        slot: analytics._calculate_slot_cognitive_fatigue(slot, start, end)
         for slot, (start, end) in slot_hours.items()
     }
 

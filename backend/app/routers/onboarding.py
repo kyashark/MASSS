@@ -13,7 +13,6 @@ from app.models.profile import (
     ActivityType,
     DayOfWeek,
     SlotName,
-    Chronotype,
 )
 
 router = APIRouter(prefix="/onboarding", tags=["Onboarding"])

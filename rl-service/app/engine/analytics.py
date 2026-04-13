@@ -453,7 +453,10 @@ class UserAnalyticsService:
     # ── Cognitive Fatigue ─────────────────────────────────────────────────────
 
     def _calculate_slot_cognitive_fatigue(
-        self, slot_name: str, start: int, end: int
+        self,
+        slot_name: str,
+        start: float,
+        end: float,  # ← float not int
     ) -> float:
         slot_sessions = [
             s for s in self.session_history if self._session_in_slot(s, start, end)

@@ -19,10 +19,6 @@ router = APIRouter(prefix="/sessions", tags=["Pomodoro Sessions"])
 
 
 def get_slot_for_user(current_time: datetime, user_id: int, db: Session) -> str:
-    """
-    Detects which of the user's custom slots the current time falls into.
-    Falls back to legacy morning/afternoon/evening if no preferences found.
-    """
     prefs = (
         db.query(SlotPreference)
         .filter(SlotPreference.user_id == user_id)
@@ -32,24 +28,38 @@ def get_slot_for_user(current_time: datetime, user_id: int, db: Session) -> str:
 
     if prefs:
         current_minutes = current_time.hour * 60 + current_time.minute
+
+        # First pass: exact match
         for pref in prefs:
             if pref.start_time and pref.end_time:
-                start_minutes = pref.start_time.hour * 60 + pref.start_time.minute
-                end_minutes = pref.end_time.hour * 60 + pref.end_time.minute
-                # Handle overnight slots (e.g. 22:00 – 02:00)
-                if start_minutes <= end_minutes:
-                    if start_minutes <= current_minutes < end_minutes:
+                start_m = pref.start_time.hour * 60 + pref.start_time.minute
+                end_m = pref.end_time.hour * 60 + pref.end_time.minute
+                if start_m <= end_m:
+                    if start_m <= current_minutes < end_m:
                         slot = pref.slot_name
                         return slot.value if hasattr(slot, "value") else str(slot)
                 else:
-                    if (
-                        current_minutes >= start_minutes
-                        or current_minutes < end_minutes
-                    ):
+                    if current_minutes >= start_m or current_minutes < end_m:
                         slot = pref.slot_name
                         return slot.value if hasattr(slot, "value") else str(slot)
 
-    # Legacy fallback if no preferences configured
+        # Second pass: no exact match — find nearest upcoming slot
+        # (user is in a gap between configured slots)
+        nearest = None
+        nearest_distance = float("inf")
+        for pref in prefs:
+            if pref.start_time:
+                start_m = pref.start_time.hour * 60 + pref.start_time.minute
+                distance = (start_m - current_minutes) % (24 * 60)
+                if distance < nearest_distance:
+                    nearest_distance = distance
+                    nearest = pref
+
+        if nearest:
+            slot = nearest.slot_name
+            return slot.value if hasattr(slot, "value") else str(slot)
+
+    # Legacy fallback
     hour = current_time.hour
     if 6 <= hour < 12:
         return "morning"
