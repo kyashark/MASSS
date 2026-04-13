@@ -82,6 +82,9 @@ class SessionHistoryItem(BaseModel):
 
 class SlotPreferenceInput(BaseModel):
     slot_name: str
+    slot_label: str = ""  # ← NEW: display name (optional, used in responses)
+    start_hour: float = 6.0  # ← NEW: e.g. 8.5 = 08:30
+    end_hour: float = 12.0  # ← NEW: e.g. 17.0 = 17:00
     max_pomodoros: int
 
     @field_validator("slot_name")
