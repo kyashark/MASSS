@@ -130,10 +130,29 @@ def _fetch_slot_preferences(user_id: int, db: Session) -> list:
     prefs = db.query(SlotPreference).filter(SlotPreference.user_id == user_id).all()
 
     if not prefs:
+        # Default fallback with standard times
         return [
-            {"slot_name": "morning", "max_pomodoros": 4},
-            {"slot_name": "afternoon", "max_pomodoros": 4},
-            {"slot_name": "evening", "max_pomodoros": 4},
+            {
+                "slot_name": "morning",
+                "slot_label": "Morning",
+                "start_hour": 6,
+                "end_hour": 12,
+                "max_pomodoros": 4,
+            },
+            {
+                "slot_name": "afternoon",
+                "slot_label": "Afternoon",
+                "start_hour": 12,
+                "end_hour": 18,
+                "max_pomodoros": 4,
+            },
+            {
+                "slot_name": "evening",
+                "slot_label": "Evening",
+                "start_hour": 18,
+                "end_hour": 24,
+                "max_pomodoros": 4,
+            },
         ]
 
     result = []
@@ -141,9 +160,38 @@ def _fetch_slot_preferences(user_id: int, db: Session) -> list:
         slot_name = (
             p.slot_name.value if hasattr(p.slot_name, "value") else str(p.slot_name)
         )
-        result.append({"slot_name": slot_name, "max_pomodoros": p.max_pomodoros or 4})
+
+        # Convert time objects to hour floats for RL service
+        start_hour = (
+            p.start_time.hour + p.start_time.minute / 60
+            if p.start_time
+            else _default_start(slot_name)
+        )
+        end_hour = (
+            p.end_time.hour + p.end_time.minute / 60
+            if p.end_time
+            else _default_end(slot_name)
+        )
+
+        result.append(
+            {
+                "slot_name": slot_name,
+                "slot_label": p.slot_label or slot_name.capitalize(),
+                "start_hour": start_hour,
+                "end_hour": end_hour,
+                "max_pomodoros": p.max_pomodoros or 4,
+            }
+        )
 
     return result
+
+
+def _default_start(slot_name: str) -> float:
+    return {"morning": 6.0, "afternoon": 12.0, "evening": 18.0}.get(slot_name, 8.0)
+
+
+def _default_end(slot_name: str) -> float:
+    return {"morning": 12.0, "afternoon": 18.0, "evening": 24.0}.get(slot_name, 22.0)
 
 
 def _fetch_weekly_routine(user_id: int, db: Session) -> list:
