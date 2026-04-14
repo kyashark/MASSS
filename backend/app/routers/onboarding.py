@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List
 from datetime import time
 
@@ -13,54 +13,191 @@ from app.models.profile import (
     ActivityType,
     DayOfWeek,
     SlotName,
-    Chronotype,
 )
 
 router = APIRouter(prefix="/onboarding", tags=["Onboarding"])
 
 
-# ── Schemas ───────────────────────────────────────────────────────────────────
-
-
-class ChronotypeRequest(BaseModel):
-    chronotype: str  # MORNING_BIRD, NIGHT_OWL, BALANCED
+# ── Schemas ────────────────────────────────────────────────────────────────────
 
 
 class RoutineEventRequest(BaseModel):
     name: str
     activity_type: str
-    days: List[str]  # list of day names e.g. ["Monday", "Wednesday"]
-    start_time: str  # HH:MM
-    end_time: str  # HH:MM
+    days: List[str]
+    start_time: str
+    end_time: str
 
 
-class CapacityRequest(BaseModel):
-    morning: int
-    afternoon: int
-    evening: int
+class SlotConfigRequest(BaseModel):
+    """One of the user's 3 custom study slots."""
+
+    slot_name: str  # "morning" | "afternoon" | "evening"
+    slot_label: str  # user's display name e.g. "Deep Work"
+    start_time: str  # "HH:MM"
+    end_time: str  # "HH:MM"
+    max_pomodoros: int
+
+    @field_validator("slot_name")
+    @classmethod
+    def validate_slot_name(cls, v):
+        if v not in {"morning", "afternoon", "evening"}:
+            raise ValueError("slot_name must be morning, afternoon, or evening")
+        return v
 
 
 class CompleteOnboardingRequest(BaseModel):
     chronotype: str
-    routine_events: List[RoutineEventRequest]
-    capacity: CapacityRequest
+    routine_events: List[RoutineEventRequest] = []
+    slots: List[SlotConfigRequest]  # exactly 3 items
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+# ── Chronotype defaults ────────────────────────────────────────────────────────
+# Used to pre-populate the slot configurator in the frontend.
+# Also used as fallback when skip_onboarding is called.
+
+CHRONOTYPE_SLOT_DEFAULTS = {
+    "morning_bird": [
+        {
+            "slot_name": "morning",
+            "slot_label": "Morning Focus",
+            "start_time": "07:00",
+            "end_time": "12:00",
+            "max_pomodoros": 6,
+        },
+        {
+            "slot_name": "afternoon",
+            "slot_label": "Afternoon",
+            "start_time": "13:00",
+            "end_time": "17:00",
+            "max_pomodoros": 3,
+        },
+        {
+            "slot_name": "evening",
+            "slot_label": "Wind Down",
+            "start_time": "18:00",
+            "end_time": "21:00",
+            "max_pomodoros": 1,
+        },
+    ],
+    "night_owl": [
+        {
+            "slot_name": "morning",
+            "slot_label": "Morning",
+            "start_time": "09:00",
+            "end_time": "12:00",
+            "max_pomodoros": 1,
+        },
+        {
+            "slot_name": "afternoon",
+            "slot_label": "Afternoon",
+            "start_time": "13:00",
+            "end_time": "17:00",
+            "max_pomodoros": 3,
+        },
+        {
+            "slot_name": "evening",
+            "slot_label": "Night Grind",
+            "start_time": "20:00",
+            "end_time": "23:30",
+            "max_pomodoros": 6,
+        },
+    ],
+    "balanced": [
+        {
+            "slot_name": "morning",
+            "slot_label": "Morning",
+            "start_time": "08:00",
+            "end_time": "12:00",
+            "max_pomodoros": 4,
+        },
+        {
+            "slot_name": "afternoon",
+            "slot_label": "Afternoon",
+            "start_time": "13:00",
+            "end_time": "17:00",
+            "max_pomodoros": 4,
+        },
+        {
+            "slot_name": "evening",
+            "slot_label": "Evening",
+            "start_time": "19:00",
+            "end_time": "22:00",
+            "max_pomodoros": 4,
+        },
+    ],
+}
+
+ENERGY_DEFAULTS = {
+    "morning_bird": {"morning": 0.85, "afternoon": 0.55, "evening": 0.30},
+    "night_owl": {"morning": 0.30, "afternoon": 0.55, "evening": 0.85},
+    "balanced": {"morning": 0.60, "afternoon": 0.60, "evening": 0.60},
+}
+
+
+def _parse_time(time_str: str) -> time:
+    h, m = map(int, time_str.split(":"))
+    # Handle "24:00" edge case
+    if h == 24:
+        h = 23
+        m = 59
+    return time(h, m)
+
+
+def _save_slots(user_id: int, slots: list, chronotype: str, db: Session):
+    """Shared logic for saving slot preferences."""
+    db.query(SlotPreference).filter(SlotPreference.user_id == user_id).delete()
+
+    energy_map = ENERGY_DEFAULTS.get(chronotype, ENERGY_DEFAULTS["balanced"])
+
+    for slot in slots:
+        slot_name = slot["slot_name"] if isinstance(slot, dict) else slot.slot_name
+        slot_label = slot["slot_label"] if isinstance(slot, dict) else slot.slot_label
+        start_str = slot["start_time"] if isinstance(slot, dict) else slot.start_time
+        end_str = slot["end_time"] if isinstance(slot, dict) else slot.end_time
+        max_pomo = (
+            slot["max_pomodoros"] if isinstance(slot, dict) else slot.max_pomodoros
+        )
+
+        energy = energy_map.get(slot_name, 0.60)
+
+        pref = SlotPreference(
+            user_id=user_id,
+            slot_name=slot_name,
+            slot_label=slot_label,
+            start_time=_parse_time(start_str),
+            end_time=_parse_time(end_str),
+            max_pomodoros=max_pomo,
+            is_preferred=energy >= 0.75,
+            inferred_energy_score=energy,
+        )
+        db.add(pref)
+
+
+# ── Endpoints ──────────────────────────────────────────────────────────────────
 
 
 @router.get("/status")
-def get_onboarding_status(
-    current_user: User = Depends(get_current_user),
-):
-    """
-    Returns whether the current user has completed onboarding.
-    Frontend calls this after login to decide where to redirect.
-    """
+def get_onboarding_status(current_user: User = Depends(get_current_user)):
     return {
         "onboarding_completed": current_user.onboarding_completed,
         "user_id": current_user.id,
         "username": current_user.username,
+    }
+
+
+@router.get("/slot-defaults/{chronotype}")
+def get_slot_defaults(chronotype: str):
+    """
+    Returns default slot configuration for a chronotype.
+    Frontend calls this when the user picks a chronotype in Step 1
+    to pre-populate the slot configurator in Step 3.
+    """
+    if chronotype not in CHRONOTYPE_SLOT_DEFAULTS:
+        raise HTTPException(status_code=400, detail=f"Unknown chronotype: {chronotype}")
+    return {
+        "chronotype": chronotype,
+        "slots": CHRONOTYPE_SLOT_DEFAULTS[chronotype],
     }
 
 
@@ -70,57 +207,22 @@ def complete_onboarding(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Saves all onboarding data in one request.
-    Called when the user clicks Finish on the last step.
-
-    What this does:
-    1. Sets slot preferences based on chronotype + capacity input
-    2. Creates weekly routine events
-    3. Marks onboarding as completed on the user record
-    """
-
-    # ── Step 1: Set Slot Preferences ─────────────────────────────────────────
-
-    # Delete any existing preferences for this user
-    # Prevents duplicates if onboarding is run more than once
-    db.query(SlotPreference).filter(SlotPreference.user_id == current_user.id).delete()
-
-    # Map chronotype to default energy scores
-    # These seed the RL inferred_energy_score before real data exists
-    chronotype_energy = {
-        "morning_bird": {"morning": 0.85, "afternoon": 0.55, "evening": 0.30},
-        "night_owl": {"morning": 0.30, "afternoon": 0.55, "evening": 0.85},
-        "balanced": {"morning": 0.60, "afternoon": 0.60, "evening": 0.60},
-    }
-
-    energy_defaults = chronotype_energy.get(
-        payload.chronotype, chronotype_energy["balanced"]
-    )
-
-    slot_capacities = {
-        "morning": payload.capacity.morning,
-        "afternoon": payload.capacity.afternoon,
-        "evening": payload.capacity.evening,
-    }
-
-    for slot_name, capacity in slot_capacities.items():
-        pref = SlotPreference(
-            user_id=current_user.id,
-            slot_name=slot_name,
-            max_pomodoros=capacity,
-            is_preferred=(energy_defaults.get(slot_name, 0.5) >= 0.75),
-            inferred_energy_score=energy_defaults.get(slot_name, 0.5),
+    # Validate exactly 3 slots covering all 3 slot names
+    slot_names_provided = {s.slot_name for s in payload.slots}
+    required = {"morning", "afternoon", "evening"}
+    if slot_names_provided != required:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Must provide exactly one slot for each of: morning, afternoon, evening",
         )
-        db.add(pref)
 
-    # ── Step 2: Create Weekly Routine Events ──────────────────────────────────
+    # ── Step 1: Save custom slot preferences ──
+    _save_slots(current_user.id, payload.slots, payload.chronotype, db)
 
-    # Delete existing routine for this user
+    # ── Step 2: Create weekly routine events ──
     db.query(WeeklyRoutine).filter(WeeklyRoutine.user_id == current_user.id).delete()
 
     for event in payload.routine_events:
-        # Validate activity type
         try:
             activity = ActivityType(event.activity_type)
         except ValueError:
@@ -128,7 +230,6 @@ def complete_onboarding(
                 status_code=422, detail=f"Invalid activity_type: {event.activity_type}"
             )
 
-        # Parse times
         try:
             start_h, start_m = map(int, event.start_time.split(":"))
             end_h, end_m = map(int, event.end_time.split(":"))
@@ -136,10 +237,9 @@ def complete_onboarding(
             end = time(end_h, end_m)
         except ValueError:
             raise HTTPException(
-                status_code=422, detail=f"Invalid time format. Use HH:MM"
+                status_code=422, detail="Invalid time format. Use HH:MM"
             )
 
-        # Create one WeeklyRoutine row per day
         for day_str in event.days:
             try:
                 day = DayOfWeek(day_str)
@@ -156,11 +256,9 @@ def complete_onboarding(
             )
             db.add(routine)
 
-    # ── Step 3: Mark Onboarding Complete ─────────────────────────────────────
-
+    # ── Step 3: Mark onboarding complete ──
     current_user.onboarding_completed = True
     db.add(current_user)
-
     db.commit()
 
     return {
@@ -174,29 +272,14 @@ def skip_onboarding(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Marks onboarding as completed without saving any data.
-    User goes straight to dashboard with default settings.
-    """
-    # Set balanced defaults so the user gets something reasonable
-    db.query(SlotPreference).filter(SlotPreference.user_id == current_user.id).delete()
-
-    for slot_name, energy in [
-        ("morning", 0.6),
-        ("afternoon", 0.6),
-        ("evening", 0.6),
-    ]:
-        pref = SlotPreference(
-            user_id=current_user.id,
-            slot_name=slot_name,
-            max_pomodoros=4,
-            is_preferred=False,
-            inferred_energy_score=energy,
-        )
-        db.add(pref)
-
+    # Use balanced defaults when skipping
+    _save_slots(
+        current_user.id,
+        CHRONOTYPE_SLOT_DEFAULTS["balanced"],
+        "balanced",
+        db,
+    )
     current_user.onboarding_completed = True
     db.add(current_user)
     db.commit()
-
     return {"message": "Onboarding skipped", "onboarding_completed": True}

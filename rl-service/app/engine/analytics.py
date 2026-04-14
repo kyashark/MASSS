@@ -60,32 +60,63 @@ class UserAnalyticsService:
         self.cfg = RLConfig()
 
     def build_rl_context(self) -> dict:
-        """Builds the context dict the RL predictor needs."""
         work_intensity = self._calculate_work_intensity()
 
-        # Build capacity map from slot preferences
-        capacity_map = {"morning": 4, "afternoon": 4, "evening": 4}
-        for pref in self.slot_preferences:
-            capacity_map[pref["slot_name"]] = pref["max_pomodoros"]
+        # Build capacity and time maps from slot preferences
+        capacity_map = {}
+        slot_hour_map = {}  # slot_name → (start_hour, end_hour)
 
-        # Build energy map per slot
+        for pref in self.slot_preferences:
+            name = pref["slot_name"]
+            start = pref.get("start_hour", self._default_start(name))
+            end = pref.get("end_hour", self._default_end(name))
+            capacity_map[name] = pref["max_pomodoros"]
+            slot_hour_map[name] = (start, end)
+
+        # Fallback if no preferences
+        if not slot_hour_map:
+            slot_hour_map = {
+                "morning": (6, 12),
+                "afternoon": (12, 18),
+                "evening": (18, 24),
+            }
+            capacity_map = {"morning": 4, "afternoon": 4, "evening": 4}
+
         energy_map = {
             slot: self._calculate_slot_energy(slot, start, end, work_intensity)
-            for slot, start, end in [
-                ("morning", 6, 12),
-                ("afternoon", 12, 18),
-                ("evening", 18, 24),
-            ]
+            for slot, (start, end) in slot_hour_map.items()
         }
 
         return {
             "work_intensity": work_intensity,
             "energy_map": energy_map,
             "capacity_map": capacity_map,
+            "slot_hour_map": slot_hour_map,  # ← NEW: passed to state router
             "recent_ratings": self._get_recent_performance_history(),
             "category_bias": self._calculate_category_bias(),
             "post_class_fatigue": self._calculate_post_class_fatigue(),
         }
+
+    def get_slot_hour_map(self) -> dict:
+        """Returns {slot_name: (start_hour, end_hour)} from preferences."""
+        result = {}
+        for pref in self.slot_preferences:
+            name = pref["slot_name"]
+            start = pref.get("start_hour", self._default_start(name))
+            end = pref.get("end_hour", self._default_end(name))
+            result[name] = (start, end)
+
+        if not result:
+            result = {"morning": (6, 12), "afternoon": (12, 18), "evening": (18, 24)}
+        return result
+
+    def _default_start(self, slot_name: str) -> float:
+        return {"morning": 6.0, "afternoon": 12.0, "evening": 18.0}.get(slot_name, 8.0)
+
+    def _default_end(self, slot_name: str) -> float:
+        return {"morning": 12.0, "afternoon": 18.0, "evening": 24.0}.get(
+            slot_name, 22.0
+        )
 
     # ── Work Intensity ────────────────────────────────────────────────────────
 
@@ -422,7 +453,10 @@ class UserAnalyticsService:
     # ── Cognitive Fatigue ─────────────────────────────────────────────────────
 
     def _calculate_slot_cognitive_fatigue(
-        self, slot_name: str, start: int, end: int
+        self,
+        slot_name: str,
+        start: float,
+        end: float,  # ← float not int
     ) -> float:
         slot_sessions = [
             s for s in self.session_history if self._session_in_slot(s, start, end)

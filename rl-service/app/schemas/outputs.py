@@ -69,6 +69,7 @@ class StateResponse(BaseModel):
     active_slot: str
     post_class_fatigue: float
     class_event_name: Optional[str] = None
+    slot_labels: Dict[str, str] = {}
 
 
 class HealthResponse(BaseModel):
