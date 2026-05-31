@@ -41,12 +41,9 @@ Training: 900,000 timesteps across 18 synthetic environments
 ## 🏗️ System Architecture
 
 Three-layer microservice architecture:
-Layer 1 — React Frontend
-Dashboard | Schedule | Focus Timer | Insights
-Layer 2 — Main Backend
-FastAPI + PostgreSQL | Auth | Tasks | Sessions
-Layer 3 — RL Microservice (internal only)
-PPO Agent | StudentSchedulingEnv | State Builder | Analytics | Retraining
+- Layer 1 — React Frontend - Dashboard | Schedule | Focus Timer | Insights 
+- Layer 2 — Main Backend - FastAPI + PostgreSQL | Auth | Tasks | Sessions 
+- Layer 3 — RL Microservice (internal only) - PPO Agent | StudentSchedulingEnv | State Builder | Analytics | Retraining
 
 ## 🛠️ Tech Stack
 
